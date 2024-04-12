@@ -2,6 +2,9 @@ import * as THREE from '../build/three.module.js'
 import {OrbitControls} from "../examples/jsm/controls/OrbitControls.js"
 import {GLTFLoader} from "../examples/jsm/loaders/GLTFLoader.js"
 import Stats from "../examples/jsm/libs/stats.module.js"
+import { Octree } from "../examples/jsm/math/Octree.js"
+import { Capsule } from "../examples/jsm/math/Capsule.js"
+import { onMouseMove } from './event.js';
 
 class App {
     constructor() {
@@ -19,16 +22,33 @@ class App {
 
     const scene = new THREE.Scene();
     this._scene = scene;
+    this._scene.background = new THREE.Color(0x87CEEB); // 하늘색으로 설정
 
+    this>this._setupOctree();
     this._setupCamera();
     this._setupLight();
     this._setupModel();
     this._setupControls();
     
+    this._raycaster = new THREE.Raycaster();
+    this._mouse = new THREE.Vector2();
+    this._highlighted = null; // 마지막으로 강조 표시된 객체
+    this._originalColor = new THREE.Color(); // 원래 색상을 저장할 변수
+
+    // this._divContainer.addEventListener('mousemove', this._onMouseMove.bind(this));
+    this._divContainer.addEventListener('mousemove', (event) => onMouseMove(event, this));
+        
+        // 마우스 클릭 이벤트 리스너 추가
+    this._divContainer.addEventListener('click', this._onMouseClick.bind(this));
+
     window.onresize = this.resize.bind(this);
     this.resize();
 
     requestAnimationFrame(this.render.bind(this));
+    }
+
+    _setupOctree(){
+        this._worldOctree = new Octree();
     }
 
     _setupControls(){
@@ -62,13 +82,13 @@ class App {
             if(this._pressKeys["shift"] ){
                 this._currentAnimationAction = this._animationMap["Run"];
                 // this._speed = 350;
-                this._maxSpeed = 350;
-                this._acceleration = 3;
+                this._maxSpeed = 700;
+                this._acceleration = 16;
             } else{
                 this._currentAnimationAction = this._animationMap["Walk"];
                 // this._speed = 80;
-                this._maxSpeed = 80;
-                this._acceleration = 3;
+                this._maxSpeed = 240;
+                this._acceleration = 9;
 
             }
         }else{
@@ -85,16 +105,58 @@ class App {
     }
 
     _setupModel() {
-        const planeGeometry = new THREE.PlaneGeometry(1000,1000);
+        const planeGeometry = new THREE.PlaneGeometry(100000,100000);
         const planeMaterial = new THREE.MeshPhongMaterial({color: 0x878787});
+        const NpcMaterial = new THREE.MeshPhongMaterial({color: 0x878787});
         const plane = new THREE.Mesh(planeGeometry,planeMaterial);
         plane.rotation.x = -Math.PI/2;
         this._scene.add(plane);
         plane.receiveShadow = true;
 
+        this._worldOctree.fromGraphNode(plane);
+        new GLTFLoader().load("./data/wood_house.glb",(gltf) =>{
+            const map = gltf.scene;
+            this._scene.add(map);
+            this.map = map;
+            map.scale.set(200,200,200);
+            map.rotation.y = Math.PI / 2; // Z축을 중심으로 90도 회전
+            map.position.set(0,0,800);
+            this._worldOctree.fromGraphNode(map);
+        })
+    
+        new GLTFLoader().load("./data/character.glb",(gltf) =>{
+            const npc = gltf.scene;
+            this._scene.add(npc);
+            
+
+            npc.traverse(child =>{
+                if(child instanceof THREE.Mesh) {
+                    child.castShadow = true;
+                }
+            });
+            
+            npc.position.set(0,0,400);
+            const box = (new THREE.Box3).setFromObject(npc);
+            box.name = "clickableBox";
+            npc.position.y = (box.max.y - box.min.y) /2;
+            const height = box.max.y - box.min.y;
+            const diameter = box.max.z - box.min.z
+
+            npc._capsule = new Capsule(
+                new THREE.Vector3(0, diameter/2, 0),
+                new THREE.Vector3(0, height - diameter/2, 0),
+                diameter/2
+            );
+            npc.rotation.y = Math.PI;
+            npc.name = "clickableBox";
+            this._npc = npc;
+    }); 
+
+        
         new GLTFLoader().load("./data/character.glb",(gltf) =>{
             const model = gltf.scene;
             this._scene.add(model);
+            
 
             model.traverse(child =>{
                 if(child instanceof THREE.Mesh) {
@@ -118,6 +180,14 @@ class App {
 
             const box = (new THREE.Box3).setFromObject(model);
             model.position.y = (box.max.y - box.min.y) /2;
+            const height = box.max.y - box.min.y;
+            const diameter = box.max.z - box.min.z
+
+            model._capsule = new Capsule(
+                new THREE.Vector3(0, diameter/2, 0),
+                new THREE.Vector3(0, height - diameter/2, 0),
+                diameter/2
+            );
 
             const axisHelper = new THREE.AxesHelper(1000);
             this._scene.add(axisHelper)
@@ -126,8 +196,75 @@ class App {
             this._scene.add(boxHelper);
             this._boxHelper = boxHelper;
             this._model = model;
-        })
+
+            const boxG = new THREE.BoxGeometry(100, 50, 100);
+            const boxM = new THREE.Mesh(boxG, NpcMaterial);
+            boxM.receiveShadow = true;
+            boxM.castShadow = true;
+            boxM.position.set(150, 0, 0);
+            boxM.name = "clickableBox"; // 식별 가능한 name 속성 추가
+            this._scene.add(boxM);
+            
+            this._boxM = boxM;
+
+            this._worldOctree.fromGraphNode(boxM);
+        });
     }
+
+    _onMouseClick(event) {
+        // 마우스 위치를 정규화된 장치 좌표로 변환
+        this._mouse.x = ( event.clientX / this._divContainer.clientWidth ) * 2 - 1;
+        this._mouse.y = - ( event.clientY / this._divContainer.clientHeight ) * 2 + 1;
+    
+        // Raycaster 업데이트
+        this._raycaster.setFromCamera(this._mouse, this._camera);
+    
+        // 클릭된 객체 확인
+        const intersects = this._raycaster.intersectObjects(this._scene.children, true);
+        for (let i = 0; i < intersects.length; i++) {
+        // 클릭된 객체가 name 속성으로 'clickableBox'인 경우 모달 표시
+            if (intersects[i].object.name === "clickableBox") {
+                const randomColor = new THREE.Color(Math.random(), Math.random(), Math.random());
+            
+             // 기존 재질을 복제하여 새 재질로 교체
+                // const newMaterial = intersects[i].object.material.clone();
+                // newMaterial.color = randomColor; // 랜덤 색상으로 변경
+                // intersects[i].object.material = newMaterial;
+
+                var modal = document.getElementById("myModal");
+                var span = document.getElementsByClassName("close")[0];
+        
+                modal.style.display = "block";
+        
+                // 닫기 버튼 클릭 시 모달 닫기
+                span.onclick = function() {
+                    modal.style.display = "none";
+                }
+        
+                // 선택지 1 클릭 시 동작
+                document.getElementById("option1").onclick = function() {
+                    console.log("선택지 1 선택됨");
+                    modal.style.display = "none";
+                }
+        
+                // 선택지 2 클릭 시 동작
+                document.getElementById("option2").onclick = function() {
+                    console.log("선택지 2 선택됨");
+                    modal.style.display = "none";
+                }
+        
+                // 모달 창 바깥 영역 클릭 시 모달 닫기
+                window.onclick = function(event) {
+                    if (event.target == modal) {
+                        modal.style.display = "none";
+                    }
+                }
+    
+            break; // 첫 번째 교차 객체만 처리하고 루프 종료
+        }
+    }
+}
+
 
     _setupCamera(){
         const camera = new THREE.PerspectiveCamera(
@@ -216,6 +353,9 @@ class App {
     _speed = 0;
     _maxSpeed = 0;
     _acceleration = 0;
+    _bOnTheGround = false;
+    _fallingAcceleration = 0;
+    _fallingSpeed = 0;
 
        update(time) {
         time *= 0.001;
@@ -247,22 +387,62 @@ class App {
             const walkDirection = new THREE.Vector3();
             this._camera.getWorldDirection(walkDirection);
 
-            walkDirection.y = 0;
+            // walkDirection.y = 0;
+            walkDirection.y = this._bOnTheGround ? 0 : -1;
             walkDirection.normalize();
 
             walkDirection.applyAxisAngle(new THREE.Vector3(0,1,0), this._directionOffset());
 
-                if(this._speed < this._maxSpeed) this._speed += this._acceleration
-                else this._speed -= this._acceleration*2;
+            if(this._speed < this._maxSpeed) this._speed += this._acceleration
+            else this._speed -= this._acceleration*2;
 
-            const moveX = walkDirection.x * (this._speed * deltaTime);
-            const moveZ = walkDirection.z * (this._speed * deltaTime);
+            if(!this._bOnTheGround){
+                this._fallingAcceleration+=1;
+                this._fallingSpeed+= Math.pow(this._fallingAcceleration, 2);
+            } else{
+                this._fallingAcceleration = 0;
+                this._fallingSpeed = 0;
+            }
 
-            this._model.position.x += moveX;
-            this._model.position.z += moveZ;
+            const velocity = new THREE.Vector3(
+                walkDirection.x * this._speed,
+                walkDirection.y * this._fallingSpeed,
+                walkDirection.z * this._speed,
+            );
 
-            this._camera.position.x += moveX;
-            this._camera.position.z += moveZ;
+            const deltaPosition = velocity.clone().multiplyScalar(deltaTime);
+
+            
+            // const moveX = walkDirection.x * (this._speed * deltaTime);
+            // const moveZ = walkDirection.z * (this._speed * deltaTime);
+
+            // this._model.position.x += moveX;
+            // this._model.position.z += moveZ;
+
+            this._model._capsule.translate(deltaPosition);
+
+            const result = this._worldOctree.capsuleIntersect(this._model._capsule);
+            if(result){
+                this._model._capsule.translate(result.normal.multiplyScalar(result.depth));
+                this._bOnTheGround = true;
+            } else{
+                this._bOnTheGround = false;
+            }
+
+            const previousPosition = this._model.position.clone();
+            const capsuleHeight = this._model._capsule.end.y - this._model._capsule.start.y + this._model._capsule.radius*2;
+            this._model.position.set(
+            this._model._capsule.start.x,
+            this._model._capsule.start.y - this._model._capsule.radius + capsuleHeight/2,
+            this._model._capsule.start.z
+            );
+
+
+            // this._camera.position.x += moveX;
+            // this._camera.position.z += moveZ;
+
+            this._camera.position.x -= previousPosition.x - this._model.position.x;
+            this._camera.position.z -= previousPosition.z - this._model.position.z;
 
             this._controls.target.set(
                 this._model.position.x,
