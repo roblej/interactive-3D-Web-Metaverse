@@ -115,7 +115,7 @@ class App {
         plane.receiveShadow = true;
 
         this._worldOctree.fromGraphNode(plane);
-        new GLTFLoader().load("./data/wood_house.glb",(gltf) =>{
+        new GLTFLoader().load("./data/scene.glb",(gltf) =>{
             const map = gltf.scene;
             this._scene.add(map);
             this.map = map;
@@ -154,50 +154,50 @@ class App {
     }); 
 
         
-        new GLTFLoader().load("./data/character.glb",(gltf) =>{
-            const model = gltf.scene;
-            this._scene.add(model);
+        // new GLTFLoader().load("./data/character.glb",(gltf) =>{
+        //     const model = gltf.scene;
+        //     this._scene.add(model);
             
 
-            model.traverse(child =>{
-                if(child instanceof THREE.Mesh) {
-                    child.castShadow = true;
-                }
-            });
+        //     model.traverse(child =>{
+        //         if(child instanceof THREE.Mesh) {
+        //             child.castShadow = true;
+        //         }
+        //     });
 
-            const animationClips = gltf.animations;
-            const mixer = new THREE.AnimationMixer(model);
-            const animationsMap = {};
-            animationClips.forEach(clip => {
-                const name = clip.name;
-                console.log(name);
-                animationsMap[name] = mixer.clipAction(clip);
-            });
+        //     const animationClips = gltf.animations;
+        //     const mixer = new THREE.AnimationMixer(model);
+        //     const animationsMap = {};
+        //     animationClips.forEach(clip => {
+        //         const name = clip.name;
+        //         console.log(name);
+        //         animationsMap[name] = mixer.clipAction(clip);
+        //     });
 
-            this._mixer = mixer;
-            this._animationMap = animationsMap;
-            this._currentAnimationAction = this._animationMap["Idle"];
-            this._currentAnimationAction.play();
+        //     this._mixer = mixer;
+        //     this._animationMap = animationsMap;
+        //     this._currentAnimationAction = this._animationMap["Idle"];
+        //     this._currentAnimationAction.play();
 
-            const box = (new THREE.Box3).setFromObject(model);
-            model.position.y = (box.max.y - box.min.y) /2;
-            const height = box.max.y - box.min.y;
-            const diameter = box.max.z - box.min.z
+        //     const box = (new THREE.Box3).setFromObject(model);
+        //     model.position.y = (box.max.y - box.min.y) /2;
+        //     const height = box.max.y - box.min.y;
+        //     const diameter = box.max.z - box .min.z
 
-            model._capsule = new Capsule(
-                new THREE.Vector3(0, diameter/2, 0),
-                new THREE.Vector3(0, height - diameter/2, 0),
-                diameter/2
-            );
+        //     model._capsule = new Capsule(
+        //         new THREE.Vector3(0, diameter/2, 0),
+        //         new THREE.Vector3(0, height - diameter/2, 0),
+        //         diameter/2
+        //     );
 
-            const axisHelper = new THREE.AxesHelper(1000);
-            this._scene.add(axisHelper)
+        //     const axisHelper = new THREE.AxesHelper(1000);
+        //     this._scene.add(axisHelper)
 
-            const boxHelper = new THREE.BoxHelper(model);
-            this._scene.add(boxHelper);
-            this._boxHelper = boxHelper;
-            this._model = model;
-        });
+        //     const boxHelper = new THREE.BoxHelper(model);
+        //     this._scene.add(boxHelper);
+        //     this._boxHelper = boxHelper;
+        //     this._model = model;
+        // });
             const boxG = new THREE.BoxGeometry(100, 50, 100);
             const boxM = new THREE.Mesh(boxG, NpcMaterial);
             boxM.receiveShadow = true;
@@ -210,7 +210,7 @@ class App {
 
             this._worldOctree.fromGraphNode(boxM);
         this.players = {};
-        this.mainPlayr = null;
+        this.mainPlayer = null;
         this.socket_ = io('localhost:3000',{transports:['websocket']});
         this.socket_.on('pos',(d) =>{
             new GLTFLoader().load("./data/character.glb",(gltf) =>{
