@@ -5,6 +5,7 @@ import Stats from "../examples/jsm/libs/stats.module.js"
 import { Octree } from "../examples/jsm/math/Octree.js"
 import { Capsule } from "../examples/jsm/math/Capsule.js"
 import { onMouseMove } from './event.js';
+import { io } from 'https://cdn.socket.io/4.7.5/socket.io.esm.min.js';
 
 class App {
     constructor() {
@@ -196,7 +197,7 @@ class App {
             this._scene.add(boxHelper);
             this._boxHelper = boxHelper;
             this._model = model;
-
+        });
             const boxG = new THREE.BoxGeometry(100, 50, 100);
             const boxM = new THREE.Mesh(boxG, NpcMaterial);
             boxM.receiveShadow = true;
@@ -208,7 +209,56 @@ class App {
             this._boxM = boxM;
 
             this._worldOctree.fromGraphNode(boxM);
-        });
+        this.players = {};
+        this.mainPlayr = null;
+        this.socket_ = io('localhost:3000',{transports:['websocket']});
+        this.socket_.on('pos',(d) =>{
+            new GLTFLoader().load("./data/character.glb",(gltf) =>{
+                const model = gltf.scene;
+                this._scene.add(model);
+                
+    
+                model.traverse(child =>{
+                    if(child instanceof THREE.Mesh) {
+                        child.castShadow = true;
+                    }
+                });
+    
+                const animationClips = gltf.animations;
+                const mixer = new THREE.AnimationMixer(model);
+                const animationsMap = {};
+                animationClips.forEach(clip => {
+                    const name = clip.name;
+                    console.log(name);
+                    animationsMap[name] = mixer.clipAction(clip);
+                });
+    
+                this._mixer = mixer;
+                this._animationMap = animationsMap;
+                this._currentAnimationAction = this._animationMap["Idle"];
+                this._currentAnimationAction.play();
+    
+                const box = (new THREE.Box3).setFromObject(model);
+                model.position.set(...d);
+                model.position.y = (box.max.y - box.min.y) /2;
+                const height = box.max.y - box.min.y;
+                const diameter = box.max.z - box.min.z
+    
+                model._capsule = new Capsule(
+                    new THREE.Vector3(0, diameter/2, 0),
+                    new THREE.Vector3(0, height - diameter/2, 0),
+                    diameter/2
+                );
+    
+                const axisHelper = new THREE.AxesHelper(1000);
+                this._scene.add(axisHelper)
+    
+                const boxHelper = new THREE.BoxHelper(model);
+                this._scene.add(boxHelper);
+                this._boxHelper = boxHelper;
+                this._model = model;
+            });
+        })
     }
 
     _onMouseClick(event) {

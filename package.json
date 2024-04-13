@@ -21,7 +21,9 @@
     "type": "git",
     "url": "https://github.com/mrdoob/three.js"
   },
-  "sideEffects": ["./examples/jsm/nodes/**/*"],
+  "sideEffects": [
+    "./examples/jsm/nodes/**/*"
+  ],
   "files": [
     "build",
     "examples/jsm",
@@ -121,5 +123,8 @@
       "build/three.module.js"
     ],
     "directories": {}
+  },
+  "dependencies": {
+    "socket.io": "^4.7.5"
   }
 }
