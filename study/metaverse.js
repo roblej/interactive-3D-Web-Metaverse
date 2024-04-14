@@ -110,6 +110,7 @@ class App {
         const planeMaterial = new THREE.MeshPhongMaterial({color: 0x878787});
         const NpcMaterial = new THREE.MeshPhongMaterial({color: 0x878787});
         const plane = new THREE.Mesh(planeGeometry,planeMaterial);
+        plane.name = "plane";
         plane.rotation.x = -Math.PI/2;
         this._scene.add(plane);
         plane.receiveShadow = true;
@@ -136,9 +137,8 @@ class App {
                 }
             });
             
-            npc.position.set(0,0,400);
+            npc.position.set(400,0,400);
             const box = (new THREE.Box3).setFromObject(npc);
-            box.name = "clickableBox";
             npc.position.y = (box.max.y - box.min.y) /2;
             const height = box.max.y - box.min.y;
             const diameter = box.max.z - box.min.z
@@ -149,8 +149,8 @@ class App {
                 diameter/2
             );
             npc.rotation.y = Math.PI;
-            npc.name = "clickableBox";
             this._npc = npc;
+            
     }); 
 
         
@@ -211,11 +211,11 @@ class App {
             this._worldOctree.fromGraphNode(boxM);
         this.players = {};
         this.mainPlayer = null;
-        this.socket_ = io('localhost:3000',{transports:['websocket']});
-        this.socket_.on('pos',(d) =>{
+        // this.socket_ = io('localhost:3000',{transports:['websocket']});
+        // this.socket_.on('pos',(d) =>{
             new GLTFLoader().load("./data/character.glb",(gltf) =>{
-                const model = gltf.scene;
-                this._scene.add(model);
+            const model = gltf.scene;
+            this._scene.add(model);
                 
     
                 model.traverse(child =>{
@@ -239,7 +239,7 @@ class App {
                 this._currentAnimationAction.play();
     
                 const box = (new THREE.Box3).setFromObject(model);
-                model.position.set(...d);
+                // model.position.set(...d);
                 model.position.y = (box.max.y - box.min.y) /2;
                 const height = box.max.y - box.min.y;
                 const diameter = box.max.z - box.min.z
@@ -258,7 +258,7 @@ class App {
                 this._boxHelper = boxHelper;
                 this._model = model;
             });
-        })
+        // })
     }
 
     _onMouseClick(event) {
@@ -273,14 +273,9 @@ class App {
         const intersects = this._raycaster.intersectObjects(this._scene.children, true);
         for (let i = 0; i < intersects.length; i++) {
         // 클릭된 객체가 name 속성으로 'clickableBox'인 경우 모달 표시
+        if (intersects[i].object.name !== "plane")
+            console.log(intersects[i].object.name);
             if (intersects[i].object.name === "clickableBox") {
-                const randomColor = new THREE.Color(Math.random(), Math.random(), Math.random());
-            
-             // 기존 재질을 복제하여 새 재질로 교체
-                // const newMaterial = intersects[i].object.material.clone();
-                // newMaterial.color = randomColor; // 랜덤 색상으로 변경
-                // intersects[i].object.material = newMaterial;
-
                 var modal = document.getElementById("myModal");
                 var span = document.getElementsByClassName("close")[0];
         
