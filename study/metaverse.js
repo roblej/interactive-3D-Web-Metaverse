@@ -23,7 +23,9 @@ class App {
 
     const scene = new THREE.Scene();
     this._scene = scene;
-    this._scene.background = new THREE.Color(0x87CEEB); // 하늘색으로 설정
+    const loader = new THREE.TextureLoader();
+    this._scene.background = loader.load('./data/sky_images.jpeg');
+    //this._scene.background = new THREE.Color(0x87CEEB); // 하늘색으로 설정
 
     this>this._setupOctree();
     this._setupCamera();
@@ -107,7 +109,7 @@ class App {
 
     _setupModel() {
         const planeGeometry = new THREE.PlaneGeometry(100000,100000);
-        const planeMaterial = new THREE.MeshPhongMaterial({color: 0x878787});
+        const planeMaterial = new THREE.MeshPhongMaterial({color: 0x0A630A});
         const NpcMaterial = new THREE.MeshPhongMaterial({color: 0x878787});
         const plane = new THREE.Mesh(planeGeometry,planeMaterial);
         plane.name = "plane";
@@ -211,11 +213,11 @@ class App {
             this._worldOctree.fromGraphNode(boxM);
         this.players = {};
         this.mainPlayer = null;
-        // this.socket_ = io('localhost:3000',{transports:['websocket']});
-        // this.socket_.on('pos',(d) =>{
+        this.socket_ = io('localhost:3000',{transports:['websocket']});
+        this.socket_.on('pos',(d) =>{
             new GLTFLoader().load("./data/character.glb",(gltf) =>{
-            const model = gltf.scene;
-            this._scene.add(model);
+                const model = gltf.scene;
+                this._scene.add(model);
                 
     
                 model.traverse(child =>{
@@ -231,7 +233,7 @@ class App {
                     const name = clip.name;
                     console.log(name);
                     animationsMap[name] = mixer.clipAction(clip);
-                // });
+                });
     
                 this._mixer = mixer;
                 this._animationMap = animationsMap;
@@ -239,7 +241,7 @@ class App {
                 this._currentAnimationAction.play();
     
                 const box = (new THREE.Box3).setFromObject(model);
-                // model.position.set(...d);
+                model.position.set(...d);
                 model.position.y = (box.max.y - box.min.y) /2;
                 const height = box.max.y - box.min.y;
                 const diameter = box.max.z - box.min.z
@@ -258,7 +260,7 @@ class App {
                 this._boxHelper = boxHelper;
                 this._model = model;
             });
-        // })
+        })
     }
 
     _onMouseClick(event) {
