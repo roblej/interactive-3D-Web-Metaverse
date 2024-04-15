@@ -231,7 +231,7 @@ class App {
                     const name = clip.name;
                     console.log(name);
                     animationsMap[name] = mixer.clipAction(clip);
-                });
+                // });
     
                 this._mixer = mixer;
                 this._animationMap = animationsMap;
