@@ -60,6 +60,11 @@ class App {
         this._controls.enablePan = false;
         this._controls.enableDamping = true;
 
+        this._controls.minDistance = 300;  // 카메라가 대상에 가장 가까울 수 있는 거리
+        this._controls.maxDistance = 1000;  // 카메라가 대상에서 가장 멀어질 수 있는 거리
+
+        this._controls.minPolarAngle = Math.PI / 4;   // 카메라가 아래로 45도 이상 내려가지 못하게 설정
+        this._controls.maxPolarAngle = Math.PI / 2;   // 카메라가 수평선 이상으로 올라가지 못하게 설정
 
         const stats = new Stats();
         this._divContainer.appendChild(stats.dom);
@@ -172,7 +177,7 @@ class App {
             const animationsMap = {};
             animationClips.forEach(clip => {
                 const name = clip.name;
-                console.log(name);
+                // console.log(name);
                 animationsMap[name] = mixer.clipAction(clip);
             });
 
@@ -209,8 +214,18 @@ class App {
             this._scene.add(boxM);
             
             this._boxM = boxM;
-
+            
             this._worldOctree.fromGraphNode(boxM);
+
+            const boxT = new THREE.Mesh(boxG, NpcMaterial);
+            boxT.receiveShadow = true;
+            boxT.castShadow = true;
+            boxT.position.set(-150, 0, 0);
+            boxT.name = "tp";
+            this._scene.add(boxT);
+            this._boxT= boxT;
+            this._worldOctree.fromGraphNode(boxT);
+
         // this.players = {};
         // this.mainPlayer = null;
         // this.socket_ = io('localhost:3000',{transports:['websocket']});
@@ -309,6 +324,17 @@ class App {
     
             break; // 첫 번째 교차 객체만 처리하고 루프 종료
         }
+        if (intersects[i].object.name === "tp") {
+            // 캐릭터의 새 위치 설정
+            this._model.position.x = 0;
+            this._model.position.z = 800;
+        
+            // 캐릭터의 현재 y 위치를 유지하면서 캡슐 위치 업데이트
+            const heightOffset = (this._model._capsule.end.y - this._model._capsule.start.y) / 2;
+            this._model._capsule.start.set(this._model.position.x, this._model.position.y, this._model.position.z);
+            this._model._capsule.end.set(this._model.position.x, this._model.position.y + heightOffset * 2, this._model.position.z);
+        }
+        
     }
 }
 
@@ -338,12 +364,12 @@ class App {
     }
 
     _setupLight() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, .5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 5);
         this._scene.add(ambientLight);
-        this._addPointLight(500, 150, 500, 0xff0000);
-        this._addPointLight(-500, 150, 500, 0xffff00);
-        this._addPointLight(-500, 150, -500, 0x00ff00);
-        this._addPointLight(500, 150, -500, 0x0000ff);
+        // this._addPointLight(500, 150, 500, 0xff0000);
+        // this._addPointLight(-500, 150, 500, 0xffff00);
+        // this._addPointLight(-500, 150, -500, 0x00ff00);
+        // this._addPointLight(500, 150, -500, 0x0000ff);
 
         const shadowLight = new THREE.DirectionalLight(0xffffff, 0.2);
         shadowLight.position.set(200, 500, 200);
