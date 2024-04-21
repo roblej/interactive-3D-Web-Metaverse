@@ -20,6 +20,8 @@ class App {
     renderer.shadowMap.type = THREE.VSMShadowMap;
 
     this._renderer = renderer;
+    this._mixers = []; // 클래스의 생성자 또는 초기화 부분에 추가
+
 
     const scene = new THREE.Scene();
     this._scene = scene;
@@ -147,7 +149,21 @@ class App {
                     child.userData.type = 'npc';
                 }
             });
-            // npc.userData.type = 'npc';
+                    // 애니메이션 믹서 설정
+            const mixer = new THREE.AnimationMixer(npc);
+            this._mixers.push(mixer);
+            const animationsMap = {};
+            gltf.animations.forEach((clip) => {
+                console.log(clip.name);
+                animationsMap[clip.name] = mixer.clipAction(clip);
+            });
+            npc.userData.animationsMap = animationsMap;
+            npc.userData.mixer = mixer;
+            // 'idle' 애니메이션 재생
+            if (animationsMap['Idle']) {
+                const idleAction = animationsMap['Idle'];
+                idleAction.play();
+            }
             npc.position.set(400,0,400);
             const box = (new THREE.Box3).setFromObject(npc);
             npc.position.y = (box.max.y - box.min.y) /2;
@@ -163,7 +179,7 @@ class App {
             this._npc = npc;
             
     }); 
-    new GLTFLoader().load("./data/character.glb",(gltf) =>{
+    new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
         const npc = gltf.scene;
         this._scene.add(npc);
         
@@ -173,17 +189,31 @@ class App {
                 child.castShadow = true;
             }
             if (child.isMesh) {
-                child.userData.isSelectable = true; // 선택 가능한 메쉬에 사용자 데이터 설정
                 child.userData.type = 'casher';
             }
         });
-        // npc.userData.type = 'npc';
+        // 애니메이션 믹서 설정
+        const mixer = new THREE.AnimationMixer(npc);
+        this._mixers.push(mixer);
+        const animationsMap = {};
+        gltf.animations.forEach((clip) => {
+            console.log(clip.name);
+            animationsMap[clip.name] = mixer.clipAction(clip);
+        });
+        npc.userData.animationsMap = animationsMap;
+        npc.userData.mixer = mixer;
+        // 'idle' 애니메이션 재생
+        if (animationsMap['idle']) {
+            const idleAction = animationsMap['idle'];
+            idleAction.play();
+        }
         npc.position.set(-400,0,400);
+        npc.scale.set(100,100,100);
         const box = (new THREE.Box3).setFromObject(npc);
-        npc.position.y = (box.max.y - box.min.y) /2;
+        // npc.position.y = (box.max.y - box.min.y) /2;
         const height = box.max.y - box.min.y;
         const diameter = box.max.z - box.min.z
-
+        
         npc._capsule = new Capsule(
             new THREE.Vector3(0, diameter/2, 0),
             new THREE.Vector3(0, height - diameter/2, 0),
@@ -191,7 +221,6 @@ class App {
         );
         npc.rotation.y = Math.PI;
         this._npc = npc;
-        
 }); 
 
         
@@ -208,6 +237,7 @@ class App {
 
             const animationClips = gltf.animations;
             const mixer = new THREE.AnimationMixer(model);
+            this._mixers.push(mixer);
             const animationsMap = {};
             animationClips.forEach(clip => {
                 const name = clip.name;
@@ -259,57 +289,6 @@ class App {
             this._scene.add(boxT);
             this._boxT= boxT;
             this._worldOctree.fromGraphNode(boxT);
-
-        // this.players = {};
-        // this.mainPlayer = null;
-        // this.socket_ = io('localhost:3000',{transports:['websocket']});
-        // this.socket_.on('pos',(d) =>{
-        //     new GLTFLoader().load("./data/character.glb",(gltf) =>{
-        //         const model = gltf.scene;
-        //         this._scene.add(model);
-                
-    
-        //         model.traverse(child =>{
-        //             if(child instanceof THREE.Mesh) {
-        //                 child.castShadow = true;
-        //             }
-        //         });
-    
-        //         const animationClips = gltf.animations;
-        //         const mixer = new THREE.AnimationMixer(model);
-        //         const animationsMap = {};
-        //         animationClips.forEach(clip => {
-        //             const name = clip.name;
-        //             console.log(name);
-        //             animationsMap[name] = mixer.clipAction(clip);
-        //         });
-    
-        //         this._mixer = mixer;
-        //         this._animationMap = animationsMap;
-        //         this._currentAnimationAction = this._animationMap["Idle"];
-        //         this._currentAnimationAction.play();
-    
-        //         const box = (new THREE.Box3).setFromObject(model);
-        //         model.position.set(...d);
-        //         model.position.y = (box.max.y - box.min.y) /2;
-        //         const height = box.max.y - box.min.y;
-        //         const diameter = box.max.z - box.min.z
-    
-        //         model._capsule = new Capsule(
-        //             new THREE.Vector3(0, diameter/2, 0),
-        //             new THREE.Vector3(0, height - diameter/2, 0),
-        //             diameter/2
-        //         );
-    
-        //         const axisHelper = new THREE.AxesHelper(1000);
-        //         this._scene.add(axisHelper)
-    
-        //         const boxHelper = new THREE.BoxHelper(model);
-        //         this._scene.add(boxHelper);
-        //         this._boxHelper = boxHelper;
-        //         this._model = model;
-        //     });
-        // })
     }
 
     _onMouseClick(event) {
@@ -323,18 +302,36 @@ class App {
         // 클릭된 객체 확인
         const intersects = this._raycaster.intersectObjects(this._scene.children, true);
         for (let i = 0; i < intersects.length; i++) {
-        // 클릭된 객체가 name 속성으로 'clickableBox'인 경우 모달 표시
             const selectedObject = intersects[0].object;
-            // if (selectedObject.userData.isSelectable) {
-            //     console.log(intersects[i].object.name);
-            //     console.log('Selected object:', selectedObject);
-            //     // 선택된 오브젝트에 대한 처리
-            // }
             if (selectedObject.userData.type == 'npc') {
                 console.log(selectedObject.userData.type)
             }
-            if(selectedObject.userData.type == 'casher')
-                console.log(selectedObject.userData.type)
+            if (selectedObject.userData.type === 'casher') {
+                console.log(selectedObject.userData.type);
+                // 올바른 animationsMap 참조를 확인
+                let npcObject = selectedObject;
+                while (npcObject.parent && !npcObject.userData.animationsMap) {
+                    npcObject = npcObject.parent;  // 부모를 거슬러 올라가며 검사
+                }
+                if (npcObject.userData.animationsMap) {
+                    const mixer = npcObject.userData.mixer;
+                    const walkAction = npcObject.userData.animationsMap['walk'];
+                    const idleAction = npcObject.userData.animationsMap['idle'];
+            
+                    // 모든 애니메이션 중지 및 'walk' 애니메이션 재생
+                    // mixer.stopAllAction();
+                    walkAction.play();
+
+        // 'walk' 애니메이션의 완료 이벤트 리스너 설정
+                    walkAction.clampWhenFinished = true; // 애니메이션 완료 후 마지막 포즈 유지
+                    walkAction.loop = THREE.LoopOnce; // 애니메이션을 한 번만 재생
+                    // mixer.addEventListener('finished', function(e) {
+                    //     if (e.action === walkAction) {
+                    idleAction.play(); // 'walk' 애니메이션이 끝나면 'idle' 애니메이션 재생
+                    
+                
+            }
+        }
             
         // if (intersects[i].object.name !== "plane")
         //     console.log(intersects[i].object.name);
@@ -479,7 +476,7 @@ class App {
        update(time) {
         time *= 0.001;
         this._controls.update();
-
+        
         if(this._boxHelper){
             this._boxHelper.update();
         }
@@ -488,7 +485,7 @@ class App {
 
         if(this._mixer) {
             const deltaTime = time - this._previousTime;
-            this._mixer.update(deltaTime);
+            this._mixers.forEach(mixer => mixer.update(deltaTime));
 
             const angleCameraDirectionAxisY=Math.atan2(
                 (this._camera.position.x - this._model.position.x),
@@ -506,7 +503,6 @@ class App {
             const walkDirection = new THREE.Vector3();
             this._camera.getWorldDirection(walkDirection);
 
-            // walkDirection.y = 0;
             walkDirection.y = this._bOnTheGround ? 0 : -1;
             walkDirection.normalize();
 
@@ -531,13 +527,6 @@ class App {
 
             const deltaPosition = velocity.clone().multiplyScalar(deltaTime);
 
-            
-            // const moveX = walkDirection.x * (this._speed * deltaTime);
-            // const moveZ = walkDirection.z * (this._speed * deltaTime);
-
-            // this._model.position.x += moveX;
-            // this._model.position.z += moveZ;
-
             this._model._capsule.translate(deltaPosition);
 
             const result = this._worldOctree.capsuleIntersect(this._model._capsule);
@@ -555,10 +544,6 @@ class App {
             this._model._capsule.start.y - this._model._capsule.radius + capsuleHeight/2,
             this._model._capsule.start.z
             );
-
-
-            // this._camera.position.x += moveX;
-            // this._camera.position.z += moveZ;
 
             this._camera.position.x -= previousPosition.x - this._model.position.x;
             this._camera.position.z -= previousPosition.z - this._model.position.z;
