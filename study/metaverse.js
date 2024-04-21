@@ -142,8 +142,12 @@ class App {
                 if(child instanceof THREE.Mesh) {
                     child.castShadow = true;
                 }
+                if (child.isMesh) {
+                    child.userData.isSelectable = true; // 선택 가능한 메쉬에 사용자 데이터 설정
+                    child.userData.type = 'npc';
+                }
             });
-            
+            // npc.userData.type = 'npc';
             npc.position.set(400,0,400);
             const box = (new THREE.Box3).setFromObject(npc);
             npc.position.y = (box.max.y - box.min.y) /2;
@@ -159,6 +163,36 @@ class App {
             this._npc = npc;
             
     }); 
+    new GLTFLoader().load("./data/character.glb",(gltf) =>{
+        const npc = gltf.scene;
+        this._scene.add(npc);
+        
+
+        npc.traverse(child =>{
+            if(child instanceof THREE.Mesh) {
+                child.castShadow = true;
+            }
+            if (child.isMesh) {
+                child.userData.isSelectable = true; // 선택 가능한 메쉬에 사용자 데이터 설정
+                child.userData.type = 'casher';
+            }
+        });
+        // npc.userData.type = 'npc';
+        npc.position.set(-400,0,400);
+        const box = (new THREE.Box3).setFromObject(npc);
+        npc.position.y = (box.max.y - box.min.y) /2;
+        const height = box.max.y - box.min.y;
+        const diameter = box.max.z - box.min.z
+
+        npc._capsule = new Capsule(
+            new THREE.Vector3(0, diameter/2, 0),
+            new THREE.Vector3(0, height - diameter/2, 0),
+            diameter/2
+        );
+        npc.rotation.y = Math.PI;
+        this._npc = npc;
+        
+}); 
 
         
         new GLTFLoader().load("./data/character.glb",(gltf) =>{
@@ -290,8 +324,20 @@ class App {
         const intersects = this._raycaster.intersectObjects(this._scene.children, true);
         for (let i = 0; i < intersects.length; i++) {
         // 클릭된 객체가 name 속성으로 'clickableBox'인 경우 모달 표시
-        if (intersects[i].object.name !== "plane")
-            console.log(intersects[i].object.name);
+            const selectedObject = intersects[0].object;
+            // if (selectedObject.userData.isSelectable) {
+            //     console.log(intersects[i].object.name);
+            //     console.log('Selected object:', selectedObject);
+            //     // 선택된 오브젝트에 대한 처리
+            // }
+            if (selectedObject.userData.type == 'npc') {
+                console.log(selectedObject.userData.type)
+            }
+            if(selectedObject.userData.type == 'casher')
+                console.log(selectedObject.userData.type)
+            
+        // if (intersects[i].object.name !== "plane")
+        //     console.log(intersects[i].object.name);
             if (intersects[i].object.name === "clickableBox") {
                 var modal = document.getElementById("myModal");
                 var span = document.getElementsByClassName("close")[0];
