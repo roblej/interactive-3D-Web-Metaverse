@@ -77,7 +77,7 @@ class App {
             this._processAnimation();
         });
     }
-
+//
     _processAnimation(){
         const previousAnimationAction = this._currentAnimationAction;
 
