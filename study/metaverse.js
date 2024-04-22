@@ -20,6 +20,8 @@ class App {
     renderer.shadowMap.type = THREE.VSMShadowMap;
 
     this._renderer = renderer;
+    this._mixers = []; // 클래스의 생성자 또는 초기화 부분에 추가
+
 
     const scene = new THREE.Scene();
     this._scene = scene;
@@ -60,6 +62,11 @@ class App {
         this._controls.enablePan = false;
         this._controls.enableDamping = true;
 
+        this._controls.minDistance = 300;  // 카메라가 대상에 가장 가까울 수 있는 거리
+        this._controls.maxDistance = 1000;  // 카메라가 대상에서 가장 멀어질 수 있는 거리
+
+        this._controls.minPolarAngle = Math.PI / 4;   // 카메라가 아래로 45도 이상 내려가지 못하게 설정
+        this._controls.maxPolarAngle = Math.PI / 2;   // 카메라가 수평선 이상으로 올라가지 못하게 설정
 
         const stats = new Stats();
         this._divContainer.appendChild(stats.dom);
@@ -77,7 +84,7 @@ class App {
             this._processAnimation();
         });
     }
-//
+
     _processAnimation(){
         const previousAnimationAction = this._currentAnimationAction;
 
@@ -112,6 +119,7 @@ class App {
         const planeMaterial = new THREE.MeshPhongMaterial({color: 0x0A630A});
         const NpcMaterial = new THREE.MeshPhongMaterial({color: 0x878787});
         const plane = new THREE.Mesh(planeGeometry,planeMaterial);
+        plane.name = "plane";
         plane.rotation.x = -Math.PI/2;
         this._scene.add(plane);
         plane.receiveShadow = true;
@@ -136,11 +144,28 @@ class App {
                 if(child instanceof THREE.Mesh) {
                     child.castShadow = true;
                 }
+                if (child.isMesh) {
+                    child.userData.isSelectable = true; // 선택 가능한 메쉬에 사용자 데이터 설정
+                    child.userData.type = 'npc';
+                }
             });
-            
-            npc.position.set(0,0,400);
+                    // 애니메이션 믹서 설정
+            const mixer = new THREE.AnimationMixer(npc);
+            this._mixers.push(mixer);
+            const animationsMap = {};
+            gltf.animations.forEach((clip) => {
+                console.log(clip.name);
+                animationsMap[clip.name] = mixer.clipAction(clip);
+            });
+            npc.userData.animationsMap = animationsMap;
+            npc.userData.mixer = mixer;
+            // 'idle' 애니메이션 재생
+            if (animationsMap['Idle']) {
+                const idleAction = animationsMap['Idle'];
+                idleAction.play();
+            }
+            npc.position.set(400,0,400);
             const box = (new THREE.Box3).setFromObject(npc);
-            box.name = "clickableBox";
             npc.position.y = (box.max.y - box.min.y) /2;
             const height = box.max.y - box.min.y;
             const diameter = box.max.z - box.min.z
@@ -151,55 +176,99 @@ class App {
                 diameter/2
             );
             npc.rotation.y = Math.PI;
-            npc.name = "clickableBox";
             this._npc = npc;
+            
     }); 
+    new GLTFLoader().load("./data/character.glb",(gltf) =>{
+        const npc = gltf.scene;
+        this._scene.add(npc);
+        
+
+        npc.traverse(child =>{
+            if(child instanceof THREE.Mesh) {
+                child.castShadow = true;
+            }
+            if (child.isMesh) {
+                child.userData.type = 'casher';
+            }
+        });
+        // 애니메이션 믹서 설정
+        const mixer = new THREE.AnimationMixer(npc);
+        this._mixers.push(mixer);
+        const animationsMap = {};
+        gltf.animations.forEach((clip) => {
+            console.log(clip.name);
+            animationsMap[clip.name] = mixer.clipAction(clip);
+        });
+        npc.userData.animationsMap = animationsMap;
+        npc.userData.mixer = mixer;
+        // 'idle' 애니메이션 재생
+        if (animationsMap['idle']) {
+            const idleAction = animationsMap['idle'];
+            idleAction.play();
+        }
+        npc.position.set(-400,0,400);
+        //npc.scale.set(100,100,100);
+        const box = (new THREE.Box3).setFromObject(npc);
+        npc.position.y = (box.max.y - box.min.y) /2;
+        const height = box.max.y - box.min.y;
+        const diameter = box.max.z - box.min.z
+        
+        npc._capsule = new Capsule(
+            new THREE.Vector3(0, diameter/2, 0),
+            new THREE.Vector3(0, height - diameter/2, 0),
+            diameter/2
+        );
+        npc.rotation.y = Math.PI;
+        this._npc = npc;
+}); 
 
         
-        // new GLTFLoader().load("./data/character.glb",(gltf) =>{
-        //     const model = gltf.scene;
-        //     this._scene.add(model);
+        new GLTFLoader().load("./data/character.glb",(gltf) =>{
+            const model = gltf.scene;
+            this._scene.add(model);
             
 
-        //     model.traverse(child =>{
-        //         if(child instanceof THREE.Mesh) {
-        //             child.castShadow = true;
-        //         }
-        //     });
+            model.traverse(child =>{
+                if(child instanceof THREE.Mesh) {
+                    child.castShadow = true;
+                }
+            });
 
-        //     const animationClips = gltf.animations;
-        //     const mixer = new THREE.AnimationMixer(model);
-        //     const animationsMap = {};
-        //     animationClips.forEach(clip => {
-        //         const name = clip.name;
-        //         console.log(name);
-        //         animationsMap[name] = mixer.clipAction(clip);
-        //     });
+            const animationClips = gltf.animations;
+            const mixer = new THREE.AnimationMixer(model);
+            this._mixers.push(mixer);
+            const animationsMap = {};
+            animationClips.forEach(clip => {
+                const name = clip.name;
+                // console.log(name);
+                animationsMap[name] = mixer.clipAction(clip);
+            });
 
-        //     this._mixer = mixer;
-        //     this._animationMap = animationsMap;
-        //     this._currentAnimationAction = this._animationMap["Idle"];
-        //     this._currentAnimationAction.play();
+            this._mixer = mixer;
+            this._animationMap = animationsMap;
+            this._currentAnimationAction = this._animationMap["Idle"];
+            this._currentAnimationAction.play();
 
-        //     const box = (new THREE.Box3).setFromObject(model);
-        //     model.position.y = (box.max.y - box.min.y) /2;
-        //     const height = box.max.y - box.min.y;
-        //     const diameter = box.max.z - box .min.z
+            const box = (new THREE.Box3).setFromObject(model);
+            model.position.y = (box.max.y - box.min.y) /2;
+            const height = box.max.y - box.min.y;
+            const diameter = box.max.z - box .min.z
 
-        //     model._capsule = new Capsule(
-        //         new THREE.Vector3(0, diameter/2, 0),
-        //         new THREE.Vector3(0, height - diameter/2, 0),
-        //         diameter/2
-        //     );
+            model._capsule = new Capsule(
+                new THREE.Vector3(0, diameter/2, 0),
+                new THREE.Vector3(0, height - diameter/2, 0),
+                diameter/2
+            );
 
-        //     const axisHelper = new THREE.AxesHelper(1000);
-        //     this._scene.add(axisHelper)
+            const axisHelper = new THREE.AxesHelper(1000);
+            this._scene.add(axisHelper)
 
-        //     const boxHelper = new THREE.BoxHelper(model);
-        //     this._scene.add(boxHelper);
-        //     this._boxHelper = boxHelper;
-        //     this._model = model;
-        // });
+            const boxHelper = new THREE.BoxHelper(model);
+            this._scene.add(boxHelper);
+            this._boxHelper = boxHelper;
+            this._model = model;
+        });
             const boxG = new THREE.BoxGeometry(100, 50, 100);
             const boxM = new THREE.Mesh(boxG, NpcMaterial);
             boxM.receiveShadow = true;
@@ -209,60 +278,17 @@ class App {
             this._scene.add(boxM);
             
             this._boxM = boxM;
-
+            
             this._worldOctree.fromGraphNode(boxM);
 
-        // this.players = {};
-        // this.mainPlayr = null;
-        // this.socket_ = io('localhost:3000',{transports:['websocket']});
-        // this.socket_.on('pos',(d) =>{
-        //     new GLTFLoader().load("./data/character.glb",(gltf) =>{
-        //         const model = gltf.scene;
-        //         this._scene.add(model);
-
-                
-    
-        //         model.traverse(child =>{
-        //             if(child instanceof THREE.Mesh) {
-        //                 child.castShadow = true;
-        //             }
-        //         });
-    
-        //         const animationClips = gltf.animations;
-        //         const mixer = new THREE.AnimationMixer(model);
-        //         const animationsMap = {};
-        //         animationClips.forEach(clip => {
-        //             const name = clip.name;
-        //             console.log(name);
-        //             animationsMap[name] = mixer.clipAction(clip);
-        //         });
-    
-        //         this._mixer = mixer;
-        //         this._animationMap = animationsMap;
-        //         this._currentAnimationAction = this._animationMap["Idle"];
-        //         this._currentAnimationAction.play();
-    
-        //         const box = (new THREE.Box3).setFromObject(model);
-        //         model.position.set(...d);
-        //         model.position.y = (box.max.y - box.min.y) /2;
-        //         const height = box.max.y - box.min.y;
-        //         const diameter = box.max.z - box.min.z
-    
-        //         model._capsule = new Capsule(
-        //             new THREE.Vector3(0, diameter/2, 0),
-        //             new THREE.Vector3(0, height - diameter/2, 0),
-        //             diameter/2
-        //         );
-    
-        //         const axisHelper = new THREE.AxesHelper(1000);
-        //         this._scene.add(axisHelper)
-    
-        //         const boxHelper = new THREE.BoxHelper(model);
-        //         this._scene.add(boxHelper);
-        //         this._boxHelper = boxHelper;
-        //         this._model = model;
-        //     });
-        // })
+            const boxT = new THREE.Mesh(boxG, NpcMaterial);
+            boxT.receiveShadow = true;
+            boxT.castShadow = true;
+            boxT.position.set(-150, 0, 0);
+            boxT.name = "tp";
+            this._scene.add(boxT);
+            this._boxT= boxT;
+            this._worldOctree.fromGraphNode(boxT);
     }
 
     _onMouseClick(event) {
@@ -276,15 +302,78 @@ class App {
         // 클릭된 객체 확인
         const intersects = this._raycaster.intersectObjects(this._scene.children, true);
         for (let i = 0; i < intersects.length; i++) {
-        // 클릭된 객체가 name 속성으로 'clickableBox'인 경우 모달 표시
-            if (intersects[i].object.name === "clickableBox") {
-                const randomColor = new THREE.Color(Math.random(), Math.random(), Math.random());
-            
-             // 기존 재질을 복제하여 새 재질로 교체
-                // const newMaterial = intersects[i].object.material.clone();
-                // newMaterial.color = randomColor; // 랜덤 색상으로 변경
-                // intersects[i].object.material = newMaterial;
+            const selectedObject = intersects[0].object;
+            if (selectedObject.userData.type == 'npc') {
+                console.log(selectedObject.userData.type)
+            }
+            if (selectedObject.userData.type === 'casher') {
+                // console.log(selectedObject.userData.type);
+                
+                var casher = document.getElementById("thiscasher");
+                var span = document.getElementsByClassName("close")[0];
+        
+                casher.style.display = "block";
+        
+                // 닫기 버튼 클릭 시 모달 닫기
+                span.onclick = function() {
+                    casher.style.display = "none";
+                }
+        
+                // 선택지 1 클릭 시 동작
+                document.getElementById("select1").onclick = function() {
+                    console.log("선택지 1 선택됨");
+                    casher.style.display = "none";
+                }
+        
+                // 선택지 2 클릭 시 동작
+                document.getElementById("select2").onclick = function() {
+                    console.log("선택지 2 선택됨");
+                    casher.style.display = "none";
+                }
 
+                // 선택지 3 클릭 시 동작
+                document.getElementById("select3").onclick = function() {
+                    console.log("선택지 3 선택됨");
+                    casher.style.display = "none";
+                }
+        
+                // 모달 창 바깥 영역 클릭 시 모달 닫기
+                window.onclick = function(event) {
+                    if (event.target == casher) {
+                        modal.style.display = "none";
+                    }
+                }
+    
+            break; // 첫 번째 교차 객체만 처리하고 루프 종료
+
+        //         // 올바른 animationsMap 참조를 확인
+        //         let npcObject = selectedObject;
+        //         while (npcObject.parent && !npcObject.userData.animationsMap) {
+        //             npcObject = npcObject.parent;  // 부모를 거슬러 올라가며 검사
+        //         }
+        //         if (npcObject.userData.animationsMap) {
+        //             const mixer = npcObject.userData.mixer;
+        //             const walkAction = npcObject.userData.animationsMap['walk'];
+        //             const idleAction = npcObject.userData.animationsMap['idle'];
+            
+        //             // 모든 애니메이션 중지 및 'walk' 애니메이션 재생
+        //             // mixer.stopAllAction();
+        //             walkAction.play();
+
+        // // 'walk' 애니메이션의 완료 이벤트 리스너 설정
+        //             walkAction.clampWhenFinished = true; // 애니메이션 완료 후 마지막 포즈 유지
+        //             walkAction.loop = THREE.LoopOnce; // 애니메이션을 한 번만 재생
+        //             // mixer.addEventListener('finished', function(e) {
+        //             //     if (e.action === walkAction) {
+        //             idleAction.play(); // 'walk' 애니메이션이 끝나면 'idle' 애니메이션 재생
+                    
+                
+        //     }
+            }
+            
+        // if (intersects[i].object.name !== "plane")
+        //     console.log(intersects[i].object.name);
+            if (intersects[i].object.name === "clickableBox") {
                 var modal = document.getElementById("myModal");
                 var span = document.getElementsByClassName("close")[0];
         
@@ -316,6 +405,17 @@ class App {
     
             break; // 첫 번째 교차 객체만 처리하고 루프 종료
         }
+        if (intersects[i].object.name === "tp") {
+            // 캐릭터의 새 위치 설정
+            this._model.position.x = 0;
+            this._model.position.z = 800;
+        
+            // 캐릭터의 현재 y 위치를 유지하면서 캡슐 위치 업데이트
+            const heightOffset = (this._model._capsule.end.y - this._model._capsule.start.y) / 2;
+            this._model._capsule.start.set(this._model.position.x, this._model.position.y, this._model.position.z);
+            this._model._capsule.end.set(this._model.position.x, this._model.position.y + heightOffset * 2, this._model.position.z);
+        }
+        
     }
 }
 
@@ -345,12 +445,12 @@ class App {
     }
 
     _setupLight() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, .5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 5);
         this._scene.add(ambientLight);
-        this._addPointLight(500, 150, 500, 0xff0000);
-        this._addPointLight(-500, 150, 500, 0xffff00);
-        this._addPointLight(-500, 150, -500, 0x00ff00);
-        this._addPointLight(500, 150, -500, 0x0000ff);
+        // this._addPointLight(500, 150, 500, 0xff0000);
+        // this._addPointLight(-500, 150, 500, 0xffff00);
+        // this._addPointLight(-500, 150, -500, 0x00ff00);
+        // this._addPointLight(500, 150, -500, 0x0000ff);
 
         const shadowLight = new THREE.DirectionalLight(0xffffff, 0.2);
         shadowLight.position.set(200, 500, 200);
@@ -414,7 +514,7 @@ class App {
        update(time) {
         time *= 0.001;
         this._controls.update();
-
+        
         if(this._boxHelper){
             this._boxHelper.update();
         }
@@ -423,7 +523,7 @@ class App {
 
         if(this._mixer) {
             const deltaTime = time - this._previousTime;
-            this._mixer.update(deltaTime);
+            this._mixers.forEach(mixer => mixer.update(deltaTime));
 
             const angleCameraDirectionAxisY=Math.atan2(
                 (this._camera.position.x - this._model.position.x),
@@ -441,7 +541,6 @@ class App {
             const walkDirection = new THREE.Vector3();
             this._camera.getWorldDirection(walkDirection);
 
-            // walkDirection.y = 0;
             walkDirection.y = this._bOnTheGround ? 0 : -1;
             walkDirection.normalize();
 
@@ -466,13 +565,6 @@ class App {
 
             const deltaPosition = velocity.clone().multiplyScalar(deltaTime);
 
-            
-            // const moveX = walkDirection.x * (this._speed * deltaTime);
-            // const moveZ = walkDirection.z * (this._speed * deltaTime);
-
-            // this._model.position.x += moveX;
-            // this._model.position.z += moveZ;
-
             this._model._capsule.translate(deltaPosition);
 
             const result = this._worldOctree.capsuleIntersect(this._model._capsule);
@@ -490,10 +582,6 @@ class App {
             this._model._capsule.start.y - this._model._capsule.radius + capsuleHeight/2,
             this._model._capsule.start.z
             );
-
-
-            // this._camera.position.x += moveX;
-            // this._camera.position.z += moveZ;
 
             this._camera.position.x -= previousPosition.x - this._model.position.x;
             this._camera.position.z -= previousPosition.z - this._model.position.z;

@@ -27,7 +27,7 @@ body{
   background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
 }
 
-.casher{
+.casher {
   display: none; /* 기본적으로 숨김 */
   position: fixed; /* Stay in place */
   z-index: 1; /* Sit on top */
