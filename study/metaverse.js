@@ -310,7 +310,7 @@ class App {
                 // console.log(selectedObject.userData.type);
                 
                 var casher = document.getElementById("thiscasher");
-                var span = document.getElementsByClassName("close")[0];
+                var span = document.getElementsByClassName("close")[1];
         
                 casher.style.display = "block";
         
@@ -340,7 +340,7 @@ class App {
                 // 모달 창 바깥 영역 클릭 시 모달 닫기
                 window.onclick = function(event) {
                     if (event.target == casher) {
-                        modal.style.display = "none";
+                        casher.style.display = "none";
                     }
                 }
     

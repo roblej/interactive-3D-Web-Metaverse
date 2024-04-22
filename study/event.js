@@ -35,19 +35,48 @@ export function onMouseMove(event, appInstance) {
         appInstance._highlighted = null;
     }
 }
+
+
 document.addEventListener('DOMContentLoaded', () => {
     const option1Button = document.getElementById('option1');
+    const select1Button = document.getElementById('select1');
     
-    option1Button.addEventListener('click', () => {
+    const eventHandler = () => {
         fetch('http://127.0.0.1:3000/api/hello')
             .then(response => response.json())
             .then(data => console.log(data))
             .catch(error => console.error('Error:', error));
-    });
+    };
+    
+    option1Button.addEventListener('click', eventHandler);
+    select1Button.addEventListener('click', eventHandler);
 });
 
 document.addEventListener('DOMContentLoaded', () => {
     const option1Button = document.getElementById('option2');
+    
+    option1Button.addEventListener('click', () => {
+        const requestOptions = {
+            method: 'POST', // 메소드 타입
+            headers: {
+                'Content-Type': 'application/json', // 컨텐츠 타입
+            },
+            body: JSON.stringify({
+                id: 'wkdgks', // 서버로 보낼 데이터
+                score : 10
+            }),
+        };
+        
+        // fetch 함수를 사용하여 POST 요청 보내기
+        fetch('http://127.0.0.1:3000/api/hello', requestOptions)
+            .then(response => response.json())
+            .then(data => console.log(data)) // 응답 데이터 처리
+            .catch(error => console.error('Error:', error)); // 에러 처리
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const option1Button = document.getElementById('select2');
     
     option1Button.addEventListener('click', () => {
         const requestOptions = {
