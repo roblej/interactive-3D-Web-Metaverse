@@ -179,7 +179,8 @@ class App {
             this._npc = npc;
             
     }); 
-    new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
+
+    new GLTFLoader().load("./data/character.glb",(gltf) =>{
         const npc = gltf.scene;
         this._scene.add(npc);
         
@@ -208,9 +209,9 @@ class App {
             idleAction.play();
         }
         npc.position.set(-400,0,400);
-        npc.scale.set(100,100,100);
+        //npc.scale.set(100,100,100);
         const box = (new THREE.Box3).setFromObject(npc);
-        // npc.position.y = (box.max.y - box.min.y) /2;
+        npc.position.y = (box.max.y - box.min.y) /2;
         const height = box.max.y - box.min.y;
         const diameter = box.max.z - box.min.z
         
@@ -223,7 +224,6 @@ class App {
         this._npc = npc;
 }); 
 
-        
         new GLTFLoader().load("./data/character.glb",(gltf) =>{
             const model = gltf.scene;
             this._scene.add(model);
@@ -307,31 +307,71 @@ class App {
                 console.log(selectedObject.userData.type)
             }
             if (selectedObject.userData.type === 'casher') {
-                console.log(selectedObject.userData.type);
-                // 올바른 animationsMap 참조를 확인
-                let npcObject = selectedObject;
-                while (npcObject.parent && !npcObject.userData.animationsMap) {
-                    npcObject = npcObject.parent;  // 부모를 거슬러 올라가며 검사
+              
+                // console.log(selectedObject.userData.type);
+                
+                var casher = document.getElementById("thiscasher");
+                var span = document.getElementsByClassName("close")[1];
+        
+                casher.style.display = "block";
+        
+                // 닫기 버튼 클릭 시 모달 닫기
+                span.onclick = function() {
+                    casher.style.display = "none";
                 }
-                if (npcObject.userData.animationsMap) {
-                    const mixer = npcObject.userData.mixer;
-                    const walkAction = npcObject.userData.animationsMap['walk'];
-                    const idleAction = npcObject.userData.animationsMap['idle'];
-            
-                    // 모든 애니메이션 중지 및 'walk' 애니메이션 재생
-                    // mixer.stopAllAction();
-                    walkAction.play();
+        
+                // 선택지 1 클릭 시 동작
+                document.getElementById("select1").onclick = function() {
+                    console.log("선택지 1 선택됨");
+                    casher.style.display = "none";
+                }
+        
+                // 선택지 2 클릭 시 동작
+                document.getElementById("select2").onclick = function() {
+                    console.log("선택지 2 선택됨");
+                    casher.style.display = "none";
+                }
 
-        // 'walk' 애니메이션의 완료 이벤트 리스너 설정
-                    walkAction.clampWhenFinished = true; // 애니메이션 완료 후 마지막 포즈 유지
-                    walkAction.loop = THREE.LoopOnce; // 애니메이션을 한 번만 재생
-                    // mixer.addEventListener('finished', function(e) {
-                    //     if (e.action === walkAction) {
-                    idleAction.play(); // 'walk' 애니메이션이 끝나면 'idle' 애니메이션 재생
+                // 선택지 3 클릭 시 동작
+                document.getElementById("select3").onclick = function() {
+                    console.log("선택지 3 선택됨");
+                    casher.style.display = "none";
+                }
+        
+                // 모달 창 바깥 영역 클릭 시 모달 닫기
+                window.onclick = function(event) {
+                    if (event.target == casher) {
+                        casher.style.display = "none";
+                    }
+                }
+    
+            break; // 첫 번째 교차 객체만 처리하고 루프 종료
+
+        //         // 올바른 animationsMap 참조를 확인
+        //         let npcObject = selectedObject;
+        //         while (npcObject.parent && !npcObject.userData.animationsMap) {
+        //             npcObject = npcObject.parent;  // 부모를 거슬러 올라가며 검사
+        //         }
+        //         if (npcObject.userData.animationsMap) {
+        //             const mixer = npcObject.userData.mixer;
+        //             const walkAction = npcObject.userData.animationsMap['walk'];
+        //             const idleAction = npcObject.userData.animationsMap['idle'];
+            
+        //             // 모든 애니메이션 중지 및 'walk' 애니메이션 재생
+        //             // mixer.stopAllAction();
+        //             walkAction.play();
+
+        // // 'walk' 애니메이션의 완료 이벤트 리스너 설정
+        //             walkAction.clampWhenFinished = true; // 애니메이션 완료 후 마지막 포즈 유지
+        //             walkAction.loop = THREE.LoopOnce; // 애니메이션을 한 번만 재생
+        //             // mixer.addEventListener('finished', function(e) {
+        //             //     if (e.action === walkAction) {
+        //             idleAction.play(); // 'walk' 애니메이션이 끝나면 'idle' 애니메이션 재생
                     
                 
+        //     }
             }
-        }
+
             
         // if (intersects[i].object.name !== "plane")
         //     console.log(intersects[i].object.name);
