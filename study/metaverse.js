@@ -179,6 +179,7 @@ class App {
             this._npc = npc;
             
     }); 
+
     new GLTFLoader().load("./data/character.glb",(gltf) =>{
         const npc = gltf.scene;
         this._scene.add(npc);
@@ -223,7 +224,6 @@ class App {
         this._npc = npc;
 }); 
 
-        
         new GLTFLoader().load("./data/character.glb",(gltf) =>{
             const model = gltf.scene;
             this._scene.add(model);
@@ -307,6 +307,7 @@ class App {
                 console.log(selectedObject.userData.type)
             }
             if (selectedObject.userData.type === 'casher') {
+              
                 // console.log(selectedObject.userData.type);
                 
                 var casher = document.getElementById("thiscasher");
@@ -370,6 +371,7 @@ class App {
                 
         //     }
             }
+
             
         // if (intersects[i].object.name !== "plane")
         //     console.log(intersects[i].object.name);
