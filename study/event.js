@@ -35,6 +35,8 @@ export function onMouseMove(event, appInstance) {
         appInstance._highlighted = null;
     }
 }
+
+
 document.addEventListener('DOMContentLoaded', () => {
     const option1Button = document.getElementById('option1');
     
@@ -56,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Content-Type': 'application/json', // 컨텐츠 타입
             },
             body: JSON.stringify({
-                id: 'wkdgks', // 서버로 보낼 데이터
+                id: sessionStorage.getItem('userId'), // 서버로 보낼 데이터
                 score : 10
             }),
         };
@@ -67,4 +69,59 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => console.log(data)) // 응답 데이터 처리
             .catch(error => console.error('Error:', error)); // 에러 처리
     });
+});
+
+// 모달 요소
+const loginModal = document.getElementById('loginModal');
+const loginForm = document.getElementById('loginForm');
+const signupForm = document.getElementById('signupForm');
+const closeButtons = document.querySelectorAll('.modal .close');
+
+// 페이지 로드 시 로그인 모달 표시
+document.addEventListener('DOMContentLoaded', function() {
+    loginModal.style.display = 'block';
+});
+
+// 모달 닫기 버튼 처리
+closeButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        this.parentElement.parentElement.style.display = 'none';
+    });
+});
+
+// 로그인 폼과 회원가입 폼 전환 함수
+window.switchToSignup = function() {
+    loginForm.style.display = 'none';
+    signupForm.style.display = 'block';
+}
+
+window.switchToLogin = function() {
+    signupForm.style.display = 'none';
+    loginForm.style.display = 'block';
+}
+
+
+// 로그인 및 회원가입 처리 함수 (예시)
+loginForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    const id = loginForm.id.value;
+    const password = loginForm.password.value;
+    console.log('로그인 시도:', id, password);
+    // 로그인 로직 구현 필요
+    sessionStorage.setItem('userId', id); // 세션에 사용자 아이디 저장
+    console.log(sessionStorage)
+});
+
+signupForm.addEventListener('submit', function(event) {
+    event.preventDefault();
+    const id = signupForm.id.value;
+    const password = signupForm.password.value;
+    const confirmPassword = signupForm.confirmPassword.value;
+    const age = signupForm.age.value;
+    if (password === confirmPassword) {
+        console.log('회원가입 시도:', id, password, age);
+        // 회원가입 로직 구현 필요
+    } else {
+        console.log('비밀번호가 일치하지 않습니다.');
+    }
 });

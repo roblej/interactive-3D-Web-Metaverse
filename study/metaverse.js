@@ -7,6 +7,7 @@ import { Capsule } from "../examples/jsm/math/Capsule.js"
 import { onMouseMove } from './event.js';
 import { io } from 'https://cdn.socket.io/4.7.5/socket.io.esm.min.js';
 
+
 class App {
     constructor() {
     const divContainer = document.querySelector("#webgl-container");
@@ -90,19 +91,19 @@ class App {
 
         if(this._pressKeys["w"] || this._pressKeys["a"] || this._pressKeys["s"] || this._pressKeys["d"]) {
             if(this._pressKeys["shift"] ){
-                this._currentAnimationAction = this._animationMap["Run"];
+                this._currentAnimationAction = this._animationMap["run"];
                 // this._speed = 350;
                 this._maxSpeed = 700;
                 this._acceleration = 16;
             } else{
-                this._currentAnimationAction = this._animationMap["Walk"];
+                this._currentAnimationAction = this._animationMap["walk"];
                 // this._speed = 80;
                 this._maxSpeed = 240;
                 this._acceleration = 9;
 
             }
         }else{
-            this._currentAnimationAction = this._animationMap["Idle"];
+            this._currentAnimationAction = this._animationMap["idle"];
             this._speed = 0;
             this._maxSpeed = 0;
             this._acceleration = 0;
@@ -115,7 +116,7 @@ class App {
     }
 
     _setupModel() {
-        const planeGeometry = new THREE.PlaneGeometry(100000,100000);
+        const planeGeometry = new THREE.PlaneGeometry(20000,20000);
         const planeMaterial = new THREE.MeshPhongMaterial({color: 0x0A630A});
         const NpcMaterial = new THREE.MeshPhongMaterial({color: 0x878787});
         const plane = new THREE.Mesh(planeGeometry,planeMaterial);
@@ -125,31 +126,30 @@ class App {
         plane.receiveShadow = true;
 
         this._worldOctree.fromGraphNode(plane);
-        new GLTFLoader().load("./data/scene.glb",(gltf) =>{
+        new GLTFLoader().load("./data/town_protoglbsmaller.glb",(gltf) =>{
             const map = gltf.scene;
             this._scene.add(map);
             this.map = map;
-            map.scale.set(200,200,200);
+            map.scale.set(50,50,50);
             map.rotation.y = Math.PI / 2; // Z축을 중심으로 90도 회전
-            map.position.set(0,0,800);
+            map.position.set(0,1,0);
             this._worldOctree.fromGraphNode(map);
         })
     
-        new GLTFLoader().load("./data/character.glb",(gltf) =>{
+        new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
             const npc = gltf.scene;
             this._scene.add(npc);
             
-
+    
             npc.traverse(child =>{
                 if(child instanceof THREE.Mesh) {
                     child.castShadow = true;
                 }
                 if (child.isMesh) {
-                    child.userData.isSelectable = true; // 선택 가능한 메쉬에 사용자 데이터 설정
                     child.userData.type = 'npc';
                 }
             });
-                    // 애니메이션 믹서 설정
+            // 애니메이션 믹서 설정
             const mixer = new THREE.AnimationMixer(npc);
             this._mixers.push(mixer);
             const animationsMap = {};
@@ -160,16 +160,17 @@ class App {
             npc.userData.animationsMap = animationsMap;
             npc.userData.mixer = mixer;
             // 'idle' 애니메이션 재생
-            if (animationsMap['Idle']) {
-                const idleAction = animationsMap['Idle'];
+            if (animationsMap['idle']) {
+                const idleAction = animationsMap['idle'];
                 idleAction.play();
             }
             npc.position.set(400,0,400);
+            npc.scale.set(50,50,50);
             const box = (new THREE.Box3).setFromObject(npc);
-            npc.position.y = (box.max.y - box.min.y) /2;
+            // npc.position.y = (box.max.y - box.min.y) /2;
             const height = box.max.y - box.min.y;
             const diameter = box.max.z - box.min.z
-
+            
             npc._capsule = new Capsule(
                 new THREE.Vector3(0, diameter/2, 0),
                 new THREE.Vector3(0, height - diameter/2, 0),
@@ -177,8 +178,8 @@ class App {
             );
             npc.rotation.y = Math.PI;
             this._npc = npc;
-            
     }); 
+      
     new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
         const npc = gltf.scene;
         this._scene.add(npc);
@@ -207,8 +208,8 @@ class App {
             const idleAction = animationsMap['idle'];
             idleAction.play();
         }
-        npc.position.set(-400,0,400);
-        npc.scale.set(100,100,100);
+        npc.position.set(0,0,-2300);
+        npc.scale.set(70,70,70);
         const box = (new THREE.Box3).setFromObject(npc);
         // npc.position.y = (box.max.y - box.min.y) /2;
         const height = box.max.y - box.min.y;
@@ -219,51 +220,49 @@ class App {
             new THREE.Vector3(0, height - diameter/2, 0),
             diameter/2
         );
-        npc.rotation.y = Math.PI;
+        // npc.rotation.y = Math.PI;
         this._npc = npc;
 }); 
 
-        
-        new GLTFLoader().load("./data/character.glb",(gltf) =>{
-            const model = gltf.scene;
-            this._scene.add(model);
-            
 
-            model.traverse(child =>{
-                if(child instanceof THREE.Mesh) {
-                    child.castShadow = true;
-                }
-            });
+    new GLTFLoader().load("./data/Xbot.glb", (gltf) => {
+        const model = gltf.scene;
+        this._scene.add(model);
 
-            const animationClips = gltf.animations;
-            const mixer = new THREE.AnimationMixer(model);
-            this._mixers.push(mixer);
-            const animationsMap = {};
-            animationClips.forEach(clip => {
-                const name = clip.name;
-                // console.log(name);
-                animationsMap[name] = mixer.clipAction(clip);
-            });
+        model.traverse(child => {
+            if (child instanceof THREE.Mesh) {
+                child.castShadow = true;
+            }
+        });
 
-            this._mixer = mixer;
-            this._animationMap = animationsMap;
-            this._currentAnimationAction = this._animationMap["Idle"];
-            this._currentAnimationAction.play();
+        model.scale.set(50, 50, 50);
 
-            const box = (new THREE.Box3).setFromObject(model);
-            model.position.y = (box.max.y - box.min.y) /2;
-            const height = box.max.y - box.min.y;
-            const diameter = box.max.z - box .min.z
+        const animationClips = gltf.animations;
+        const mixer = new THREE.AnimationMixer(model);
+        this._mixers.push(mixer);
+        const animationsMap = {};
+        animationClips.forEach(clip => {
+            const name = clip.name;
+            animationsMap[name] = mixer.clipAction(clip);
+        });
 
-            model._capsule = new Capsule(
-                new THREE.Vector3(0, diameter/2, 0),
-                new THREE.Vector3(0, height - diameter/2, 0),
-                diameter/2
-            );
+        this._mixer = mixer;
+        this._animationMap = animationsMap;
+        this._currentAnimationAction = this._animationMap["idle"];
+        this._currentAnimationAction.play();
+
+        const box = new THREE.Box3().setFromObject(model);
+        const height = box.max.y - box.min.y;
+        const diameter = box.max.z - box.min.z;
+
+        model._capsule = new Capsule(
+            new THREE.Vector3(0, 1, 0),
+            new THREE.Vector3(0, 3, 0),
+            diameter / 2
+        );
 
             const axisHelper = new THREE.AxesHelper(1000);
             this._scene.add(axisHelper)
-
             const boxHelper = new THREE.BoxHelper(model);
             this._scene.add(boxHelper);
             this._boxHelper = boxHelper;
@@ -387,7 +386,7 @@ class App {
             60,
             window.innerWidth / window.innerHeight,
             1,
-            5000
+            20000
         );
         camera.position.set(0, 100, 500);
         this._camera = camera;
