@@ -214,7 +214,7 @@ class App {
         npc.position.set(0,0,-2300);
         npc.scale.set(70,70,70);
         const box = (new THREE.Box3).setFromObject(npc);
-        npc.position.y = (box.max.y - box.min.y) /2;
+        // npc.position.y = 0;
         const height = box.max.y - box.min.y;
         const diameter = box.max.z - box.min.z
         
