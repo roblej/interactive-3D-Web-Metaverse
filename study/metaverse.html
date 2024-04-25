@@ -16,6 +16,7 @@
     <title>Document</title>
 </head>
 <body>
+    
     <div id="webgl-container"></div>
             <!-- 모달 창 -->
             <div id="myModal" class="modal">
@@ -37,6 +38,27 @@
                     <button id ="select1">이렇게 할까?</button>
                     <button id ="select2">저렇게 할까?</button>
                     <button id ="select3">요렇게 할까?</button>    
+                </div>
+            </div>
+            <div id="loginModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <form id="loginForm">
+                        <h2>로그인</h2>
+                        <input type="text" placeholder="아이디" name="id" required>
+                        <input type="password" placeholder="비밀번호" name="password" required>
+                        <button type="submit">로그인</button>
+                        <button type="button" onclick="switchToSignup()">회원가입</button>
+                    </form>
+                    <form id="signupForm" style="display:none;">
+                        <h2>회원가입</h2>
+                        <input type="text" placeholder="아이디" name="id" required>
+                        <input type="password" placeholder="비밀번호" name="password" required>
+                        <input type="password" placeholder="비밀번호 확인" name="confirmPassword" required>
+                        <input type="text" placeholder="나이" name="age" required>
+                        <button type="submit">회원가입</button>
+                        <button type="button" onclick="switchToLogin()">로그인</button>
+                    </form>
                 </div>
             </div>
 </body>
