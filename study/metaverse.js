@@ -6,12 +6,12 @@ import { Octree } from "../examples/jsm/math/Octree.js"
 import { Capsule } from "../examples/jsm/math/Capsule.js"
 import { onMouseMove } from './event.js';
 
+export var game_name = ""
 
 class App {
     constructor() {
     const divContainer = document.querySelector("#webgl-container");
     this._divContainer = divContainer;
-
     const renderer = new THREE.WebGLRenderer({ antialias:true});
     renderer.setPixelRatio(window.devicePixelRatio);
     divContainer.appendChild(renderer.domElement);
@@ -184,9 +184,7 @@ class App {
             this._mixers.push(mixer);
             const animationsMap = {};
             gltf.animations.forEach((clip) => {
-                console.log('마루움직임')
-                console.log(clip.name);
-                console.log('마루움직임')
+                console.log(clip.name)
                 animationsMap[clip.name] = mixer.clipAction(clip);
             });
             npc.userData.animationsMap = animationsMap;
@@ -475,14 +473,14 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
             this._model = model;
         });
             const boxG = new THREE.BoxGeometry(50, 50, 50);
-            const boxM = new THREE.Mesh(boxG, NpcMaterial);
-            boxM.receiveShadow = true;
-            boxM.castShadow = true;
-            boxM.position.set(150, 0, 0);
-            boxM.name = "clickableBox"; // 식별 가능한 name 속성 추가
-            this._scene.add(boxM);
-            this._worldOctree.fromGraphNode(boxM);
-            this._boxM = boxM;
+            // const boxM = new THREE.Mesh(boxG, NpcMaterial);
+            // boxM.receiveShadow = true;
+            // boxM.castShadow = true;
+            // boxM.position.set(150, 0, 0);
+            // boxM.name = "clickableBox"; // 식별 가능한 name 속성 추가
+            // this._scene.add(boxM);
+            // this._worldOctree.fromGraphNode(boxM);
+            // this._boxM = boxM;
 
             const GameA = new THREE.Mesh(boxG, NpcMaterial);
             GameA.receiveShadow = true;
@@ -491,6 +489,14 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
             GameA.name = "GameA"; // 식별 가능한 name 속성 추가
             this._scene.add(GameA);
             this._worldOctree.fromGraphNode(GameA);
+
+            const GameB = new THREE.Mesh(boxG, NpcMaterial);
+            GameB.receiveShadow = true;
+            GameB.castShadow = true;
+            GameB.position.set(2189, 0, 132);
+            GameB.name = "GameB"; // 식별 가능한 name 속성 추가
+            this._scene.add(GameB);
+            this._worldOctree.fromGraphNode(GameB);
 
 
             const boxT = new THREE.Mesh(boxG, NpcMaterial);
@@ -678,8 +684,8 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
                 var option1 = document.getElementById("select1");
                 var option2 = document.getElementById("select2");
                 var option3 = document.getElementById("select3");
-                var buttonGroup = document.getElementById("buttonGroup"); // 버튼 그룹을 감싸고 있는 div의 ID를 가정
 
+                var buttonGroup = document.getElementById("buttonGroup"); // 버튼 그룹을 감싸고 있는 div의 ID를 가정
 
                 // 대화 내용 업데이트
                 dialogText.innerHTML = "안녕? 나는 npc3야.";
@@ -745,7 +751,7 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
             if (intersects[i].object.name === "clickableBox") {
                 var modal = document.getElementById("myModal");
                 var span = document.getElementsByClassName("close")[0];
-        
+                sessionStorage.setItem('npc_name', selectedObject.userData.type);
                 modal.style.display = "block";
         
                 // 닫기 버튼 클릭 시 모달 닫기
@@ -773,11 +779,10 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
                 }
     
             break; // 첫 번째 교차 객체만 처리하고 루프 종료
-            }
-            else if (intersects[i].object.name === "GameA") {
+            } else if (intersects[i].object.name === "GameA") {
+                game_name = "GameA"
                 var modal = document.getElementById("myModal");
                 var span = document.getElementsByClassName("close")[0];
-        
                 modal.style.display = "block";
         
                 // 닫기 버튼 클릭 시 모달 닫기
@@ -806,11 +811,43 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
     
             break; // 첫 번째 교차 객체만 처리하고 루프 종료
             
-        }
+        } else if (intersects[i].object.name === "GameB") {
+            game_name = "GameB"
+            var modal = document.getElementById("myModal");
+            var span = document.getElementsByClassName("close")[0];
+            modal.style.display = "block";
+    
+            // 닫기 버튼 클릭 시 모달 닫기
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
+    
+            // 선택지 1 클릭 시 동작
+            document.getElementById("option1").onclick = function() {
+                console.log("선택지 1 선택됨");
+                modal.style.display = "none";
+            }
+    
+            // 선택지 2 클릭 시 동작
+            document.getElementById("option2").onclick = function() {
+                console.log("선택지 2 선택됨");
+                modal.style.display = "none";
+            }
+    
+            // 모달 창 바깥 영역 클릭 시 모달 닫기
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+
+        break; // 첫 번째 교차 객체만 처리하고 루프 종료
+        
+    }
         if (intersects[i].object.name === "tp") {
             // 캐릭터의 새 위치 설정
-            this._model.position.x = 0;
-            this._model.position.z = 800;
+            this._model.position.x = 2328;
+            this._model.position.z = 247;
         
             // 캐릭터의 현재 y 위치를 유지하면서 캡슐 위치 업데이트
             const heightOffset = (this._model._capsule.end.y - this._model._capsule.start.y) / 2;
