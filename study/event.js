@@ -115,6 +115,8 @@ loginForm.addEventListener('submit', function(event) {
     // 로그인 로직 구현 필요
     sessionStorage.setItem('userId', id); // 세션에 사용자 아이디 저장
     console.log(sessionStorage)
+    loginModal.style.display = 'none';
+
 });
 
 signupForm.addEventListener('submit', function(event) {
