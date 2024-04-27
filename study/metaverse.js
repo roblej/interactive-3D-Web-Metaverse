@@ -5,7 +5,6 @@ import Stats from "../examples/jsm/libs/stats.module.js"
 import { Octree } from "../examples/jsm/math/Octree.js"
 import { Capsule } from "../examples/jsm/math/Capsule.js"
 import { onMouseMove } from './event.js';
-import { io } from 'https://cdn.socket.io/4.7.5/socket.io.esm.min.js';
 
 
 class App {
@@ -35,12 +34,39 @@ class App {
     this._setupLight();
     this._setupModel();
     this._setupControls();
-    
+
+    const listener = new THREE.AudioListener();
+    this._camera.add(listener)
+    const sound = new THREE.Audio(listener);
+
+// 오디오 로더 생성
+    const audioLoader = new THREE.AudioLoader();
+
+// 오디오 파일 로드 및 재생
+    document.getElementById('loginModal').addEventListener('click', function() {
+        if (listener.context.state === 'suspended') {
+            listener.context.resume(); // AudioContext 상태 확인 및 활성화
+        }
+
+            audioLoader.load('./data/bgm.mp3', function(buffer) {
+                sound.setBuffer(buffer);
+                sound.setLoop(true);
+                sound.setVolume(0.3);
+                sound.play();
+            });
+        });
+    // 볼륨 노브 컨트롤
+    const volumeSlider = document.getElementById('volumeSlider');
+    volumeSlider.addEventListener('input', function() {
+        const volume = this.value / 100;
+        sound.setVolume(volume);
+    });
+
     this._raycaster = new THREE.Raycaster();
     this._mouse = new THREE.Vector2();
     this._highlighted = null; // 마지막으로 강조 표시된 객체
     this._originalColor = new THREE.Color(); // 원래 색상을 저장할 변수
-
+    this._positionLabel = document.getElementById("positionLabel");  // HTML에서 레이블 요소 참조
     // this._divContainer.addEventListener('mousemove', this._onMouseMove.bind(this));
     this._divContainer.addEventListener('mousemove', (event) => onMouseMove(event, this));
         
@@ -52,7 +78,12 @@ class App {
 
     requestAnimationFrame(this.render.bind(this));
     }
-
+    _updatePositionLabel() {
+        if (this._model) {  // 모델이 로드된 경우에만 실행
+            const { x, y, z } = this._model.position;
+            this._positionLabel.innerHTML = `Model Position - X: ${x.toFixed(2)}, Y: ${y.toFixed(2)}, Z: ${z.toFixed(2)}`;
+        }
+    }
     _setupOctree(){
         this._worldOctree = new Octree();
     }
@@ -135,7 +166,52 @@ class App {
             map.position.set(0,1,0);
             this._worldOctree.fromGraphNode(map);
         })
+        new GLTFLoader().load("./data/walking_maru.glb",(gltf) =>{
+            const npc = gltf.scene;
+            this._scene.add(npc);
+            
     
+            npc.traverse(child =>{
+                if(child instanceof THREE.Mesh) {
+                    child.castShadow = true;
+                }
+                if (child.isMesh) {
+                    child.userData.type = 'maru';
+                }
+            });
+            // 애니메이션 믹서 설정
+            const mixer = new THREE.AnimationMixer(npc);
+            this._mixers.push(mixer);
+            const animationsMap = {};
+            gltf.animations.forEach((clip) => {
+                console.log('마루움직임')
+                console.log(clip.name);
+                console.log('마루움직임')
+                animationsMap[clip.name] = mixer.clipAction(clip);
+            });
+            npc.userData.animationsMap = animationsMap;
+            npc.userData.mixer = mixer;
+            // 'idle' 애니메이션 재생
+            if (animationsMap['Body1|Unreal Take|Base Layer']) {
+                const idleAction = animationsMap['Body1|Unreal Take|Base Layer'];
+                idleAction.play();
+            }
+            // npc.position.set(100,0,-230);
+            npc.scale.set(50,50,50);
+            const box = (new THREE.Box3).setFromObject(npc);
+            // npc.position.y = (box.max.y - box.min.y) /2;
+            const height = box.max.y - box.min.y;
+            const diameter = box.max.z - box.min.z
+            
+            npc._capsule = new Capsule(
+                new THREE.Vector3(0, diameter/2, 0),
+                new THREE.Vector3(0, height - diameter/2, 0),
+                diameter/2
+            );
+            npc.rotation.y = Math.PI;
+            this._npc = npc;
+    }); 
+
         new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
             const npc = gltf.scene;
             this._scene.add(npc);
@@ -146,7 +222,7 @@ class App {
                     child.castShadow = true;
                 }
                 if (child.isMesh) {
-                    child.userData.type = 'npc';
+                    child.userData.type = 'teacher';
                 }
             });
             // 애니메이션 믹서 설정
@@ -154,7 +230,7 @@ class App {
             this._mixers.push(mixer);
             const animationsMap = {};
             gltf.animations.forEach((clip) => {
-                console.log(clip.name);
+                // console.log(clip.name);
                 animationsMap[clip.name] = mixer.clipAction(clip);
             });
             npc.userData.animationsMap = animationsMap;
@@ -179,8 +255,135 @@ class App {
             npc.rotation.y = Math.PI;
             this._npc = npc;
     }); 
+    new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
+        const npc = gltf.scene;
+        this._scene.add(npc);
+        
 
-      
+        npc.traverse(child =>{
+            if(child instanceof THREE.Mesh) {
+                child.castShadow = true;
+            }
+            if (child.isMesh) {
+                child.userData.type = 'teacher';
+            }
+        });
+        // 애니메이션 믹서 설정
+        const mixer = new THREE.AnimationMixer(npc);
+        this._mixers.push(mixer);
+        const animationsMap = {};
+        gltf.animations.forEach((clip) => {
+            // console.log(clip.name);
+            animationsMap[clip.name] = mixer.clipAction(clip);
+        });
+        npc.userData.animationsMap = animationsMap;
+        npc.userData.mixer = mixer;
+        // 'idle' 애니메이션 재생
+        if (animationsMap['idle']) {
+            const idleAction = animationsMap['idle'];
+            idleAction.play();
+        }
+        npc.position.set(2300,30,60);
+        npc.scale.set(50,50,50);
+        const box = (new THREE.Box3).setFromObject(npc);
+        // npc.position.y = (box.max.y - box.min.y) /2;
+        const height = box.max.y - box.min.y;
+        const diameter = box.max.z - box.min.z
+        
+        npc._capsule = new Capsule(
+            new THREE.Vector3(0, diameter/2, 0),
+            new THREE.Vector3(0, height - diameter/2, 0),
+            diameter/2
+        );
+        // npc.rotation.y = Math.PI;
+        this._npc = npc;
+}); 
+new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
+    const npc = gltf.scene;
+    this._scene.add(npc);
+    
+
+    npc.traverse(child =>{
+        if(child instanceof THREE.Mesh) {
+            child.castShadow = true;
+        }
+        if (child.isMesh) {
+            child.userData.type = 'npc3';
+        }
+    });
+    // 애니메이션 믹서 설정
+    const mixer = new THREE.AnimationMixer(npc);
+    this._mixers.push(mixer);
+    const animationsMap = {};
+    gltf.animations.forEach((clip) => {
+        // console.log(clip.name);
+        animationsMap[clip.name] = mixer.clipAction(clip);
+    });
+    npc.userData.animationsMap = animationsMap;
+    npc.userData.mixer = mixer;
+    // 'idle' 애니메이션 재생
+    if (animationsMap['idle']) {
+        const idleAction = animationsMap['idle'];
+        idleAction.play();
+    }
+    npc.position.set(360,1,2341);
+    npc.scale.set(70,70,70);
+    const box = (new THREE.Box3).setFromObject(npc);
+    // npc.position.y = (box.max.y - box.min.y) /2;
+    const height = box.max.y - box.min.y;
+    const diameter = box.max.z - box.min.z
+    
+    npc._capsule = new Capsule(
+        new THREE.Vector3(0, diameter/2, 0),
+        new THREE.Vector3(0, height - diameter/2, 0),
+        diameter/2
+    );
+    npc.rotation.y = Math.PI/2;
+    this._npc = npc;
+}); 
+new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
+    const npc = gltf.scene;
+    this._scene.add(npc);
+    
+
+    npc.traverse(child =>{
+        if(child instanceof THREE.Mesh) {
+            child.castShadow = true;
+        }
+        if (child.isMesh) {
+            child.userData.type = 'teacher';
+        }
+    });
+    // 애니메이션 믹서 설정
+    const mixer = new THREE.AnimationMixer(npc);
+    this._mixers.push(mixer);
+    const animationsMap = {};
+    gltf.animations.forEach((clip) => {
+        // console.log(clip.name);
+        animationsMap[clip.name] = mixer.clipAction(clip);
+    });
+    npc.userData.animationsMap = animationsMap;
+    npc.userData.mixer = mixer;
+    // 'idle' 애니메이션 재생
+    if (animationsMap['idle']) {
+        const idleAction = animationsMap['idle'];
+        idleAction.play();
+    }
+    npc.position.set(-2222,0,1297);
+    npc.scale.set(70,70,70);
+    const box = (new THREE.Box3).setFromObject(npc);
+    // npc.position.y = (box.max.y - box.min.y) /2;
+    const height = box.max.y - box.min.y;
+    const diameter = box.max.z - box.min.z
+    
+    npc._capsule = new Capsule(
+        new THREE.Vector3(0, diameter/2, 0),
+        new THREE.Vector3(0, height - diameter/2, 0),
+        diameter/2
+    );
+    npc.rotation.y = Math.PI/2;
+    this._npc = npc;
+}); 
     new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
 
         const npc = gltf.scene;
@@ -200,7 +403,7 @@ class App {
         this._mixers.push(mixer);
         const animationsMap = {};
         gltf.animations.forEach((clip) => {
-            console.log(clip.name);
+            // console.log(clip.name);
             animationsMap[clip.name] = mixer.clipAction(clip);
         });
         npc.userData.animationsMap = animationsMap;
@@ -238,8 +441,7 @@ class App {
             }
         });
 
-        model.scale.set(50, 50, 50);
-
+        
         const animationClips = gltf.animations;
         const mixer = new THREE.AnimationMixer(model);
         this._mixers.push(mixer);
@@ -248,22 +450,23 @@ class App {
             const name = clip.name;
             animationsMap[name] = mixer.clipAction(clip);
         });
-
+        
         this._mixer = mixer;
         this._animationMap = animationsMap;
         this._currentAnimationAction = this._animationMap["idle"];
         this._currentAnimationAction.play();
-
+        
         const box = new THREE.Box3().setFromObject(model);
         const height = box.max.y - box.min.y;
         const diameter = box.max.z - box.min.z;
-
+        
         model._capsule = new Capsule(
-            new THREE.Vector3(0, 1, 0),
-            new THREE.Vector3(0, 3, 0),
-            diameter / 2
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(0, height, 0),
+            (diameter/2)*50
         );
-
+        
+        model.scale.set(50, 50, 50);
             const axisHelper = new THREE.AxesHelper(1000);
             this._scene.add(axisHelper)
             const boxHelper = new THREE.BoxHelper(model);
@@ -271,17 +474,24 @@ class App {
             this._boxHelper = boxHelper;
             this._model = model;
         });
-            const boxG = new THREE.BoxGeometry(100, 50, 100);
+            const boxG = new THREE.BoxGeometry(50, 50, 50);
             const boxM = new THREE.Mesh(boxG, NpcMaterial);
             boxM.receiveShadow = true;
             boxM.castShadow = true;
             boxM.position.set(150, 0, 0);
             boxM.name = "clickableBox"; // 식별 가능한 name 속성 추가
             this._scene.add(boxM);
-            
-            this._boxM = boxM;
-            
             this._worldOctree.fromGraphNode(boxM);
+            this._boxM = boxM;
+
+            const GameA = new THREE.Mesh(boxG, NpcMaterial);
+            GameA.receiveShadow = true;
+            GameA.castShadow = true;
+            GameA.position.set(76, 0, -2300);
+            GameA.name = "GameA"; // 식별 가능한 name 속성 추가
+            this._scene.add(GameA);
+            this._worldOctree.fromGraphNode(GameA);
+
 
             const boxT = new THREE.Mesh(boxG, NpcMaterial);
             boxT.receiveShadow = true;
@@ -305,7 +515,7 @@ class App {
         const intersects = this._raycaster.intersectObjects(this._scene.children, true);
         for (let i = 0; i < intersects.length; i++) {
             const selectedObject = intersects[0].object;
-            if (selectedObject.userData.type == 'npc') {
+            if (selectedObject.userData.type == 'teacher') {
                 console.log(selectedObject.userData.type)
             }
             if (selectedObject.userData.type === 'casher') {
@@ -373,6 +583,99 @@ class App {
                 
         //     }
             }
+            else if (selectedObject.userData.type == 'teacher') {
+                var casher = document.getElementById("thiscasher");
+                var span = document.getElementsByClassName("close")[1];
+                var dialogText = document.querySelector("#thiscasher .Speech1 p");
+                var option1 = document.getElementById("select1");
+                var option2 = document.getElementById("select2");
+                var option3 = document.getElementById("select3");
+            
+                // 대화 내용 업데이트
+                dialogText.innerHTML = "안녕? 나는 선생님이야.";
+            
+                // 각 선택지 업데이트
+                option1.innerHTML = "안녕하세요";
+                option2.innerHTML = "그런데요?";
+                option3.innerHTML = "아저씨 저 아세요?";
+            
+                casher.style.display = "block";
+            
+                // 닫기 버튼 클릭 시 모달 닫기
+                span.onclick = function() {
+                    casher.style.display = "none";
+                };
+            
+                // 각 선택지 클릭 시 동작
+                option1.onclick = function() {
+                    console.log("첫 번째 선택지 선택됨");
+                    casher.style.display = "none";
+                };
+            
+                option2.onclick = function() {
+                    console.log("두 번째 선택지 선택됨");
+                    casher.style.display = "none";
+                };
+            
+                option3.onclick = function() {
+                    console.log("세 번째 선택지 선택됨");
+                    casher.style.display = "none";
+                };
+            
+                // 모달 창 바깥 영역 클릭 시 모달 닫기
+                window.onclick = function(event) {
+                    if (event.target == casher) {
+                        casher.style.display = "none";
+                    }
+                };
+            }
+            else if (selectedObject.userData.type == 'npc3') {
+                var casher = document.getElementById("thiscasher");
+                var span = document.getElementsByClassName("close")[1];
+                var dialogText = document.querySelector("#thiscasher .Speech1 p");
+                var option1 = document.getElementById("select1");
+                var option2 = document.getElementById("select2");
+                var option3 = document.getElementById("select3");
+            
+                // 대화 내용 업데이트
+                dialogText.innerHTML = "안녕? 나는 npc3야.";
+            
+                // 각 선택지 업데이트
+                option1.innerHTML = "안녕하세요";
+                option2.innerHTML = "와 AI다!?";
+                option3.innerHTML = "집에가고싶어요";
+            
+                casher.style.display = "block";
+            
+                // 닫기 버튼 클릭 시 모달 닫기
+                span.onclick = function() {
+                    casher.style.display = "none";
+                };
+            
+                // 각 선택지 클릭 시 동작
+                option1.onclick = function() {
+                    console.log("첫 번째 선택지 선택됨");
+                    casher.style.display = "none";
+                };
+            
+                option2.onclick = function() {
+                    console.log("두 번째 선택지 선택됨");
+                    casher.style.display = "none";
+                };
+            
+                option3.onclick = function() {
+                    console.log("세 번째 선택지 선택됨");
+                    casher.style.display = "none";
+                };
+            
+                // 모달 창 바깥 영역 클릭 시 모달 닫기
+                window.onclick = function(event) {
+                    if (event.target == casher) {
+                        casher.style.display = "none";
+                    }
+                };
+            }
+            
 
             
         // if (intersects[i].object.name !== "plane")
@@ -408,6 +711,39 @@ class App {
                 }
     
             break; // 첫 번째 교차 객체만 처리하고 루프 종료
+            }
+            else if (intersects[i].object.name === "GameA") {
+                var modal = document.getElementById("myModal");
+                var span = document.getElementsByClassName("close")[0];
+        
+                modal.style.display = "block";
+        
+                // 닫기 버튼 클릭 시 모달 닫기
+                span.onclick = function() {
+                    modal.style.display = "none";
+                }
+        
+                // 선택지 1 클릭 시 동작
+                document.getElementById("option1").onclick = function() {
+                    console.log("선택지 1 선택됨");
+                    modal.style.display = "none";
+                }
+        
+                // 선택지 2 클릭 시 동작
+                document.getElementById("option2").onclick = function() {
+                    console.log("선택지 2 선택됨");
+                    modal.style.display = "none";
+                }
+        
+                // 모달 창 바깥 영역 클릭 시 모달 닫기
+                window.onclick = function(event) {
+                    if (event.target == modal) {
+                        modal.style.display = "none";
+                    }
+                }
+    
+            break; // 첫 번째 교차 객체만 처리하고 루프 종료
+            
         }
         if (intersects[i].object.name === "tp") {
             // 캐릭터의 새 위치 설정
@@ -460,7 +796,7 @@ class App {
         shadowLight.position.set(200, 500, 200);
         shadowLight.target.position.set(0, 0, 0);
         const directionalLightHelper = new THREE.DirectionalLightHelper(shadowLight, 10);
-        this._scene.add(directionalLightHelper);
+        // this._scene.add(directionalLightHelper);
         
         this._scene.add(shadowLight);
         this._scene.add(shadowLight.target);
@@ -474,7 +810,7 @@ class App {
         shadowLight.shadow.camera.far = 900;
         shadowLight.shadow.radius = 5;
         const shadowCameraHelper = new THREE.CameraHelper(shadowLight.shadow.camera);
-        this._scene.add(shadowCameraHelper);
+        // this._scene.add(shadowCameraHelper);
     }
     
     _previousDirectionOffset = 0;
@@ -604,6 +940,7 @@ class App {
     render(time) {
         this._renderer.render(this._scene, this._camera);
         this.update(time);
+        this._updatePositionLabel();  // 좌표 업데이트 함수 호출
         requestAnimationFrame(this.render.bind(this));
     }
 
