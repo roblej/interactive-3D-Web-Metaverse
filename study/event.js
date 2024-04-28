@@ -112,36 +112,45 @@ signupForm.addEventListener('submit', function(event) {
     const id = signupForm.id.value;
     const password = signupForm.password.value;
     const confirmPassword = signupForm.confirmPassword.value;
-    const age = signupForm.age.value; // 이 예제에서는 나이를 서버로 전송하지 않지만, 필요에 따라 추가 가능합니다.
 
-    if (password === confirmPassword) {
-        console.log('회원가입 시도:', id, password, age);
-        // Fetch API를 사용하여 서버에 회원가입 요청 전송
-        fetch('http://127.0.0.1:3000/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                id: id,
-                password: password
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('회원가입 성공:', data);
-            alert('회원가입 성공!');
-            // 성공 후 추가적인 로직 처리 (예: 로그인 페이지로 리다이렉트)
-        })
-        .catch(error => {
-            console.error('회원가입 실패:', error);
-            alert('회원가입에 실패했습니다.');
-        });
-    } else {
-        console.log('비밀번호가 일치하지 않습니다.');
+    if (password !== confirmPassword) {
         alert('비밀번호가 일치하지 않습니다.');
+        return;
     }
+
+    console.log('회원가입 시도:', id, password);
+
+    // Fetch API를 사용하여 서버에 회원가입 요청 전송
+    fetch('http://127.0.0.1:3000/register', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            id: id,
+            password: password
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json(); // 성공 시 JSON 데이터로 파싱
+        } else if (response.status === 409) {
+            throw new Error('중복된 아이디입니다.'); // 409 상태 코드 처리
+        } else {
+            throw new Error('회원가입 중 오류 발생'); // 기타 오류 처리
+        }
+    })
+    .then(data => {
+        console.log('회원가입 성공:', data);
+        alert('회원가입 성공!');
+        // 성공 후 추가적인 로직 처리 (예: 로그인 페이지로 리다이렉트)
+    })
+    .catch(error => {
+        console.error('회원가입 실패:', error);
+        alert(error.message); // 에러 메시지 표시
+    });
 });
+
 
 document.addEventListener('DOMContentLoaded', () => {
     const option1Button = document.getElementById('option1');
