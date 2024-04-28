@@ -844,15 +844,70 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
         break; // 첫 번째 교차 객체만 처리하고 루프 종료
         
     }
+    
         if (intersects[i].object.name === "tp") {
+            var teleport = document.getElementById("teleport");
+            var span = document.getElementsByClassName("close")[4];
+            var school = document.getElementById("school");
+            var market = document.getElementById("market");
+            var village = document.getElementById("village");
+            var library = document.getElementById("library");
+            var park = document.getElementById("park");
+            var center = document.getElementById("center");
+
+            teleport.style.display = "block";
+
+            // 닫기 버튼 클릭 시 모달 닫기
+            span.onclick = function() {
+                teleport.style.display = "none";
+            }
+
+            document.getElementById("village").onclick = function (){
+                console.log("마을회관으로 이동합니다.")
+                this._model.position.x = 2328;
+                this._model.position.z = 247;
+                teleport.style.display = "none";
+                const heightOffset = (this._model._capsule.end.y - this._model._capsule.start.y) / 2;
+                this._model._capsule.start.set(this._model.position.x, this._model.position.y, this._model.position.z);
+                this._model._capsule.end.set(this._model.position.x, this._model.position.y + heightOffset * 2, this._model.position.z);
+            }
+            document.getElementById("market").onclick = function (){
+                console.log("마트로 이동합니다.")
+                this._model.position.x = -110;
+                this._model.position.z = -2073;
+                teleport.style.display = "none";
+            }
+            document.getElementById("school").onclick = function (){
+                console.log("학교로 이동합니다.")
+                this._model.position.x = -2030;
+                this._model.position.z = 1345;
+                teleport.style.display = "none";
+            }
+            document.getElementById("library").onclick = function (){
+                console.log("도서관으로 이동합니다.")
+                this._model.position.x = 515;
+                this._model.position.z = 2210;
+                teleport.style.display = "none";
+            }
+            document.getElementById("park").onclick = function (){
+                console.log("공원으로 이동합니다")
+                this._model.position.x = 2395;
+                this._model.position.z = 2595;
+                teleport.style.display = "none";
+            }
+
+
+
+            
             // 캐릭터의 새 위치 설정
-            this._model.position.x = 2328;
-            this._model.position.z = 247;
+        
+            //this._model.position.x = 2328;
+            //this._model.position.z = 247;
         
             // 캐릭터의 현재 y 위치를 유지하면서 캡슐 위치 업데이트
-            const heightOffset = (this._model._capsule.end.y - this._model._capsule.start.y) / 2;
-            this._model._capsule.start.set(this._model.position.x, this._model.position.y, this._model.position.z);
-            this._model._capsule.end.set(this._model.position.x, this._model.position.y + heightOffset * 2, this._model.position.z);
+            //const heightOffset = (this._model._capsule.end.y - this._model._capsule.start.y) / 2;
+            //this._model._capsule.start.set(this._model.position.x, this._model.position.y, this._model.position.z);
+            //this._model._capsule.end.set(this._model.position.x, this._model.position.y + heightOffset * 2, this._model.position.z);
         }
         
     }

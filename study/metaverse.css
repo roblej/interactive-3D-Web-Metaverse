@@ -78,7 +78,8 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* 모달 콘텐츠 스타일 */
-.modal-content {
+.modal-content{
+  
   background-color: #fefefe;
   position: fixed;
   bottom: -100px;
@@ -98,6 +99,18 @@ input[type="range"]::-moz-range-thumb {
   padding: 20px;
   border: 1px solid #888;
   width: 80%; /* Could be more or less, depending on screen size */
+}
+
+.telp{
+  background-color: #fefefe;
+  position: fixed;
+  bottom: -100px;
+  right: 10%;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+  display: none;
 }
 
 /* 닫기 버튼 스타일 */
