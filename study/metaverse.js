@@ -209,7 +209,94 @@ class App {
             npc.rotation.y = Math.PI;
             this._npc = npc;
     }); 
+    new GLTFLoader().load("./data/frswhl.glb",(gltf) =>{
+        const npc = gltf.scene;
+        this._scene.add(npc);
+        
 
+        npc.traverse(child =>{
+            if(child instanceof THREE.Mesh) {
+                child.castShadow = true;
+            }
+            if (child.isMesh) {
+                child.userData.type = 'frswhl';
+            }
+        });
+        // 애니메이션 믹서 설정
+        const mixer = new THREE.AnimationMixer(npc);
+        this._mixers.push(mixer);
+        const animationsMap = {};
+        gltf.animations.forEach((clip) => {
+            console.log(clip.name)
+            animationsMap[clip.name] = mixer.clipAction(clip);
+        });
+        npc.userData.animationsMap = animationsMap;
+        npc.userData.mixer = mixer;
+        // 'idle' 애니메이션 재생
+        if (animationsMap['Take 001']) {
+            const idleAction = animationsMap['Take 001'];
+            idleAction.play();
+        }
+        npc.position.set(1000,0,-230);
+        npc.scale.set(50,50,50);
+        const box = (new THREE.Box3).setFromObject(npc);
+        // npc.position.y = (box.max.y - box.min.y) /2;
+        // const height = box.max.y - box.min.y;
+        // const diameter = box.max.z - box.min.z
+        
+        // npc._capsule = new Capsule(
+        //     new THREE.Vector3(0, diameter/2, 0),
+        //     new THREE.Vector3(0, height - diameter/2, 0),
+        //     diameter/2
+        // );
+        npc.rotation.y = Math.PI;
+        this._npc = npc;
+        this._worldOctree.fromGraphNode(npc);
+});
+new GLTFLoader().load("./data/drone01.glb",(gltf) =>{
+    const npc = gltf.scene;
+    this._scene.add(npc);
+    
+
+    npc.traverse(child =>{
+        if(child instanceof THREE.Mesh) {
+            child.castShadow = true;
+        }
+        if (child.isMesh) {
+            child.userData.type = 'drone';
+        }
+    });
+    // 애니메이션 믹서 설정
+    const mixer = new THREE.AnimationMixer(npc);
+    this._mixers.push(mixer);
+    const animationsMap = {};
+    gltf.animations.forEach((clip) => {
+        console.log(clip.name)
+        animationsMap[clip.name] = mixer.clipAction(clip);
+    });
+    npc.userData.animationsMap = animationsMap;
+    npc.userData.mixer = mixer;
+    // 'idle' 애니메이션 재생
+    if (animationsMap['Root_Robot|Unreal Take|Base Layer']) {
+        const idleAction = animationsMap['Root_Robot|Unreal Take|Base Layer'];
+        idleAction.play();
+    }
+    // npc.position.set(1000,0,-230);
+    npc.scale.set(50,50,50);
+    const box = (new THREE.Box3).setFromObject(npc);
+    // npc.position.y = (box.max.y - box.min.y) /2;
+    // const height = box.max.y - box.min.y;
+    // const diameter = box.max.z - box.min.z
+    
+    // npc._capsule = new Capsule(
+    //     new THREE.Vector3(0, diameter/2, 0),
+    //     new THREE.Vector3(0, height - diameter/2, 0),
+    //     diameter/2
+    // );
+    npc.rotation.y = Math.PI;
+    this._npc = npc;
+    this._worldOctree.fromGraphNode(npc);
+});
         new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
             const npc = gltf.scene;
             this._scene.add(npc);
@@ -466,9 +553,9 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
         
         model.scale.set(50, 50, 50);
             const axisHelper = new THREE.AxesHelper(1000);
-            this._scene.add(axisHelper)
+            // this._scene.add(axisHelper)
             const boxHelper = new THREE.BoxHelper(model);
-            this._scene.add(boxHelper);
+            // this._scene.add(boxHelper);
             this._boxHelper = boxHelper;
             this._model = model;
         });
