@@ -166,7 +166,7 @@ class App {
             map.position.set(0,1,0);
             this._worldOctree.fromGraphNode(map);
         })
-        new GLTFLoader().load("./data/walking_maru.glb",(gltf) =>{
+        new GLTFLoader().load("./data/Maru_01.glb",(gltf) =>{
             const npc = gltf.scene;
             this._scene.add(npc);
             
