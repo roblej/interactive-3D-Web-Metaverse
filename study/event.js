@@ -54,11 +54,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // 모달 닫기 버튼 처리
-// closeButtons.forEach(button => {
-//     button.addEventListener('click', function() {
-//         this.parentElement.parentElement.style.display = 'none';
-//     });
-// });
+closeButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        this.parentElement.parentElement.style.display = 'none';
+    });
+});
 
 // 로그인 폼과 회원가입 폼 전환 함수
 window.switchToSignup = function() {
@@ -172,15 +172,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const option1Button = document.getElementById('option2');
 
     option1Button.addEventListener('click', () => {
+        const randomScore = Math.floor(Math.random() * 11) * 10; // 0부터 100까지 10의 단위로 랜덤 점수 생성
+
         const requestOptions = {
-            method: 'POST', // 메소드 타입
+            method: 'POST',
             headers: {
-                'Content-Type': 'application/json', // 컨텐츠 타입
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                id: globalId, // 서버로 보낼 데이터
-                game_name : game_name,
-                score : 10
+                id: globalId,
+                game_name: game_name,
+                score: randomScore // 랜덤 점수 사용
             }),
         };
         

@@ -15,11 +15,12 @@ class App {
     const renderer = new THREE.WebGLRenderer({ antialias:true});
     renderer.setPixelRatio(window.devicePixelRatio);
     divContainer.appendChild(renderer.domElement);
+    this._renderer = renderer;
+    this._canvas = renderer.domElement; // canvas를 클래스 변수로 저장
 
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.VSMShadowMap;
 
-    this._renderer = renderer;
     this._mixers = []; // 클래스의 생성자 또는 초기화 부분에 추가
 
 
@@ -196,6 +197,7 @@ class App {
             }
             // npc.position.set(100,0,-230);
             npc.scale.set(50,50,50);
+            npc.position.x = 50
             const box = (new THREE.Box3).setFromObject(npc);
             // npc.position.y = (box.max.y - box.min.y) /2;
             const height = box.max.y - box.min.y;
@@ -227,7 +229,7 @@ class App {
         this._mixers.push(mixer);
         const animationsMap = {};
         gltf.animations.forEach((clip) => {
-            console.log(clip.name)
+            // console.log(clip.name)
             animationsMap[clip.name] = mixer.clipAction(clip);
         });
         npc.userData.animationsMap = animationsMap;
@@ -253,12 +255,13 @@ class App {
         this._npc = npc;
         this._worldOctree.fromGraphNode(npc);
 });
-new GLTFLoader().load("./data/drone01.glb",(gltf) =>{
-    const npc = gltf.scene;
-    this._scene.add(npc);
+
+new GLTFLoader().load("./data/test.glb",(gltf) =>{
+    const support = gltf.scene;
+    this._scene.add(support);
     
 
-    npc.traverse(child =>{
+    support.traverse(child =>{
         if(child instanceof THREE.Mesh) {
             child.castShadow = true;
         }
@@ -267,23 +270,24 @@ new GLTFLoader().load("./data/drone01.glb",(gltf) =>{
         }
     });
     // 애니메이션 믹서 설정
-    const mixer = new THREE.AnimationMixer(npc);
+    const mixer = new THREE.AnimationMixer(support);
     this._mixers.push(mixer);
     const animationsMap = {};
     gltf.animations.forEach((clip) => {
-        console.log(clip.name)
+        // console.log(clip.name)
         animationsMap[clip.name] = mixer.clipAction(clip);
     });
-    npc.userData.animationsMap = animationsMap;
-    npc.userData.mixer = mixer;
+    support.userData.animationsMap = animationsMap;
+    support.userData.mixer = mixer;
     // 'idle' 애니메이션 재생
     if (animationsMap['Root_Robot|Unreal Take|Base Layer']) {
         const idleAction = animationsMap['Root_Robot|Unreal Take|Base Layer'];
         idleAction.play();
     }
     // npc.position.set(1000,0,-230);
-    npc.scale.set(50,50,50);
-    const box = (new THREE.Box3).setFromObject(npc);
+    support.scale.set(50,50,50);
+    support.position.set(50,0,0)
+    // const box = (new THREE.Box3).setFromObject(support);
     // npc.position.y = (box.max.y - box.min.y) /2;
     // const height = box.max.y - box.min.y;
     // const diameter = box.max.z - box.min.z
@@ -293,9 +297,9 @@ new GLTFLoader().load("./data/drone01.glb",(gltf) =>{
     //     new THREE.Vector3(0, height - diameter/2, 0),
     //     diameter/2
     // );
-    npc.rotation.y = Math.PI;
-    this._npc = npc;
-    this._worldOctree.fromGraphNode(npc);
+    support.rotation.y = Math.PI;
+    this._support = support;
+    this._worldOctree.fromGraphNode(support);
 });
         new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
             const npc = gltf.scene;
@@ -612,7 +616,7 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
                 console.log(selectedObject.userData.type)
             }
             if (selectedObject.userData.type === 'casher') {
-              
+            //   this._model.lookAt(selectedObject.position)
                 // console.log(selectedObject.userData.type);
                 
                 var casher = document.getElementById("thiscasher");
@@ -1117,10 +1121,27 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
                 this._model.position.y,
                 this._model.position.z,
             )
+            // this._support.lookAt(this._model.position)
+            const distance = this._support.position.distanceTo(this._model.position)
+            if(distance>300){
+                const step = 2
+                const direction = new THREE.Vector3().subVectors(this._model.position, this._support.position).normalize();
+                this._support.position.addScaledVector(direction, step);
+            }
 
-        }
-        this._previousTime = time;
-    }
+            const vector = new THREE.Vector3();
+            this._support.getWorldPosition(vector);
+            vector.project(this._camera);
+
+            const x = (vector.x * .5 + .5) * this._canvas.clientWidth;
+            const y = (vector.y * -.5 + .5) * this._canvas.clientHeight;
+
+            const speechBubble = document.getElementById('speechBubble');
+            speechBubble.style.transform = `translate(-50%, -600%) translate(${x}px,${y}px)`;
+            speechBubble.style.display = 'block';
+                }
+                this._previousTime = time;
+            }
 
 
     render(time) {
