@@ -847,15 +847,15 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
     
         if (intersects[i].object.name === "tp") {
             var teleport = document.getElementById("teleport");
-            var span = document.getElementsByClassName("close")[4];
-            var school = document.getElementById("school");
-            var market = document.getElementById("market");
-            var village = document.getElementById("village");
-            var library = document.getElementById("library");
-            var park = document.getElementById("park");
-            var center = document.getElementById("center");
+            var span = document.getElementsByClassName("close")[0];
+            // var school = document.getElementById("school");
+            // var market = document.getElementById("market");
+            // var village = document.getElementById("village");
+            // var library = document.getElementById("library");
+            // var park = document.getElementById("park");
+            // var center = document.getElementById("center");
 
-            teleport.style.display = "block";
+            tele.style.display = "block";
 
             // 닫기 버튼 클릭 시 모달 닫기
             span.onclick = function() {
@@ -867,9 +867,9 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
                 this._model.position.x = 2328;
                 this._model.position.z = 247;
                 teleport.style.display = "none";
-                const heightOffset = (this._model._capsule.end.y - this._model._capsule.start.y) / 2;
-                this._model._capsule.start.set(this._model.position.x, this._model.position.y, this._model.position.z);
-                this._model._capsule.end.set(this._model.position.x, this._model.position.y + heightOffset * 2, this._model.position.z);
+                // const heightOffset = (this._model._capsule.end.y - this._model._capsule.start.y) / 2;
+                // this._model._capsule.start.set(this._model.position.x, this._model.position.y, this._model.position.z);
+                // this._model._capsule.end.set(this._model.position.x, this._model.position.y + heightOffset * 2, this._model.position.z);
             }
             document.getElementById("market").onclick = function (){
                 console.log("마트로 이동합니다.")
