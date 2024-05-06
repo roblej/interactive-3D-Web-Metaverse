@@ -77,7 +77,7 @@ input[type="range"]::-moz-range-thumb {
   background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
 }
 
-.tp {
+.teleportbox {
   display: none; /* 기본적으로 숨김 */
   position: fixed; /* Stay in place */
   z-index: 1; /* Sit on top */
@@ -115,7 +115,7 @@ input[type="range"]::-moz-range-thumb {
   width: 80%; /* Could be more or less, depending on screen size */
 }
 
-.tele{
+.telp{
   background-color: #fefefe;
   position: fixed;
   bottom: -100px;
@@ -124,7 +124,6 @@ input[type="range"]::-moz-range-thumb {
   padding: 20px;
   border: 1px solid #888;
   width: 80%; /* Could be more or less, depending on screen size */
-  display: none;
 }
 
 /* 닫기 버튼 스타일 */

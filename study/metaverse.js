@@ -503,7 +503,7 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
             boxT.receiveShadow = true;
             boxT.castShadow = true;
             boxT.position.set(-150, 0, 0);
-            boxT.name = "tp";
+            boxT.name = "teleportbox";
             this._scene.add(boxT);
             this._boxT= boxT;
             this._worldOctree.fromGraphNode(boxT);
@@ -845,7 +845,7 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
         
     }
     
-        if (intersects[i].object.name === "tp") {
+        else if (intersects[i].object.name === 'teleportbox') {
             var teleport = document.getElementById("teleport");
             var span = document.getElementsByClassName("close")[0];
             // var school = document.getElementById("school");
@@ -855,11 +855,11 @@ new GLTFLoader().load("./data/Xbot.glb",(gltf) =>{
             // var park = document.getElementById("park");
             // var center = document.getElementById("center");
 
-            tele.style.display = "block";
+            teleport.style.display = "block";
 
             // 닫기 버튼 클릭 시 모달 닫기
             span.onclick = function() {
-                teleport.style.display = "none";
+                teleport.style.display = "none"; 
             }
 
             document.getElementById("village").onclick = function (){
